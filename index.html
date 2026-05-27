@@ -351,8 +351,85 @@
   #wheelie-toast.show {
     transform: translateX(-50%) scale(1) rotate(-4deg);
   }
+  #touch-controls {
+    display: none;
+    position: fixed;
+    bottom: 14px; right: 14px;
+    gap: 12px;
+    z-index: 9998;
+  }
+  body.game-active #touch-controls {
+    display: flex;
+  }
+  @media (hover: hover) and (pointer: fine) and (min-width: 801px) {
+    body.game-active #touch-controls { display: none; }
+  }
+  .touch-btn {
+    width: 64px; height: 64px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    font-size: 26px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  }
+  #touch-go { width: 84px; height: 84px; font-size: 36px; background: rgba(255,0,170,0.7); }
+  .touch-btn:active, .touch-btn.held { background: #ff00aa; transform: scale(0.95); }
+  #lb-popup {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(380px, calc(100vw - 32px));
+    z-index: 10000;
+  }
+  #lb-popup.show { display: block; }
+  .lb-body {
+    padding: 14px 16px 12px;
+    background: var(--gray);
+    text-align: center;
+  }
+  #lb-your-time {
+    font-family: "Courier New", monospace;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  #lb-your-route {
+    font-size: 11px;
+    color: var(--gray-darker);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+  }
+  #lb-list {
+    font-family: "Courier New", monospace;
+    text-align: left;
+    background: var(--light);
+    border-top: 1px solid var(--gray-darker);
+    border-left: 1px solid var(--gray-darker);
+    border-right: 1px solid var(--light);
+    border-bottom: 1px solid var(--light);
+    padding: 8px 8px 8px 30px;
+    margin: 0 0 12px;
+    min-height: 90px;
+  }
+  #lb-list li { padding: 2px 4px; font-size: 13px; }
+  #lb-list li.current { background: #ffeb3b; font-weight: 700; }
+  .lb-actions { display: flex; gap: 6px; justify-content: center; }
+  .lb-actions .map-btn { padding: 6px 12px; }
   @media (max-width: 800px) {
-    #app { grid-template-columns: 1fr; grid-template-rows: 60vh 1fr; height: calc(100vh - 23px); }
+    #app { grid-template-columns: 1fr; grid-template-rows: 40vh 1fr; height: calc(100vh - 23px); }
+    body.game-active #app { grid-template-rows: 0 1fr; }
+    body.game-active #sidebar-window { display: none; }
+    .touch-btn { width: 56px; height: 56px; font-size: 22px; }
+    #touch-go { width: 72px; height: 72px; font-size: 30px; }
   }
 </style>
 </head>
@@ -441,6 +518,30 @@
 </div>
 
 <div id="wheelie-toast">🚲💨 WHEELIE!!!</div>
+
+<div id="touch-controls">
+  <button class="touch-btn" id="touch-wheelie">←</button>
+  <button class="touch-btn" id="touch-jump">↓</button>
+  <button class="touch-btn" id="touch-go">→</button>
+</div>
+
+<div id="lb-popup">
+  <div class="window">
+    <div class="titlebar">
+      <div class="titlebar-title"><span class="titlebar-icon">🏆</span><span>LEADERBOARD.EXE</span></div>
+      <div class="win-controls"><button class="win-btn" id="lb-close">×</button></div>
+    </div>
+    <div class="lb-body">
+      <div id="lb-your-time">YOUR TIME: --</div>
+      <div id="lb-your-route">—</div>
+      <ol id="lb-list"></ol>
+      <div class="lb-actions">
+        <button class="map-btn" id="lb-replay">▶ RIDE AGAIN</button>
+        <button class="map-btn" id="lb-back">↩ BACK TO MAP</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 const ROUTE_LINE = [
@@ -936,50 +1037,71 @@ let gameLastT = 0;
 
 const CHECKPOINTS = {
   excited: [
-    { km: 0,    name: 'TORONTO',   sub: 'START',                       shown: true },
-    { km: 335,  name: 'ROCHESTER', sub: 'DAY 1 · ~335 KM · ULTRA',     shown: false },
-    { km: 775,  name: 'ALBANY',    sub: 'DAY 2 · ~440 KM · INHUMAN',   shown: false },
-    { km: 1065, name: 'NEW YORK',  sub: 'DAY 3 · ~290 KM · VICTORY',   shown: false }
+    { km: 0,    name: 'TORONTO',   shown: true },
+    { km: 335,  name: 'ROCHESTER', shown: false },
+    { km: 775,  name: 'ALBANY',    shown: false },
+    { km: 1065, name: 'NEW YORK',  shown: false }
   ],
   aggressive: [
-    { km: 0,    name: 'TORONTO',      sub: 'START',                       shown: true },
-    { km: 230,  name: 'BATAVIA',      sub: 'DAY 1 · ~230 KM',             shown: false },
-    { km: 500,  name: 'SYRACUSE',     sub: 'DAY 2 · ~275 KM · REST EARNED', shown: false },
-    { km: 725,  name: 'AMSTERDAM',    sub: 'DAY 4 · ~225 KM',             shown: false },
-    { km: 935,  name: 'POUGHKEEPSIE', sub: 'DAY 5 · ~215 KM',             shown: false },
-    { km: 1065, name: 'NEW YORK',     sub: 'DAY 6 · ~130 KM · FINISH',    shown: false }
+    { km: 0,    name: 'TORONTO',      shown: true },
+    { km: 230,  name: 'BATAVIA',      shown: false },
+    { km: 500,  name: 'SYRACUSE',     shown: false },
+    { km: 725,  name: 'AMSTERDAM',    shown: false },
+    { km: 935,  name: 'POUGHKEEPSIE', shown: false },
+    { km: 1065, name: 'NEW YORK',     shown: false }
   ]
 };
 
+function fmtTime(sec) {
+  if (!isFinite(sec)) return '--:--';
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m > 0 ? `${m}:${s.toFixed(2).padStart(5, '0')}` : `${s.toFixed(2)}s`;
+}
+
+function elevAt(km) {
+  return Math.sin(km * 0.008) * 22 + Math.sin(km * 0.022) * 9 + Math.sin(km * 0.045) * 4;
+}
+function slopeAt(km) {
+  return (elevAt(km + 0.5) - elevAt(km - 0.5));
+}
+
 function newGameState(route = 'excited') {
-  const cities = CHECKPOINTS[route].map(c => ({ ...c }));
+  const cities = CHECKPOINTS[route].map(c => ({ ...c, time: null }));
   const cityKms = cities.map(c => c.km);
-  const totalDays = route === 'excited' ? 3 : 5;
   return {
     route,
     km: 0,
+    speed: 0,        // player-controlled
+    maxSpeed: 140,
+    accel: 230,
+    drag: 110,
     bikeAir: 0,
     bikeVY: 0,
-    speed: 110,
     won: false,
     finishedAt: null,
+    startTime: null,   // set on first forward press
+    finalTime: null,
     wheelieT: 0,
     crashT: 0,
-    winText: `1,065 KM IN ${totalDays} DAYS · ` + (route === 'excited' ? 'THE BIKE IS PROUD' : 'YOU EARNED THIS'),
+    hazardHits: 0,
+    lbShown: false,
     cities,
     obstacles: (() => {
-      const obs = []; let k = 100;
-      const types = ['cone', 'pothole', 'ramp'];
+      const obs = []; let k = 80;
+      const types = ['cone', 'pothole', 'ramp', 'ramp']; // ramps are friendlier; weight them
       while (k < 1040) {
-        const nearCity = cityKms.some(ck => Math.abs(ck - k) < 30);
-        if (!nearCity) obs.push({ km: k, type: types[Math.floor(Math.random() * 3)], hit: false });
-        k += 55 + Math.random() * 100;
+        const nearCity = cityKms.some(ck => Math.abs(ck - k) < 35);
+        if (!nearCity) obs.push({ km: k, type: types[Math.floor(Math.random() * 4)], hit: false });
+        k += 55 + Math.random() * 95;
       }
       return obs;
     })(),
     banner: null
   };
 }
+
+const keys = { right: false, left: false, down: false };
 
 function resizeGame() {
   const r = gameCanvas.getBoundingClientRect();
@@ -1006,6 +1128,8 @@ function stopGame() {
   if (gameRAF) cancelAnimationFrame(gameRAF);
   gameRAF = null;
   stopAmbient();
+  keys.right = keys.left = keys.down = false;
+  hideLeaderboard();
   document.body.classList.remove('game-active');
   document.getElementById('btn-ride').style.display = '';
   document.getElementById('btn-stop').style.display = 'none';
@@ -1022,59 +1146,92 @@ function gameTick(t) {
   if (!gameRunning) return;
   const dt = Math.min(0.05, (t - gameLastT) / 1000);
   gameLastT = t;
+  const gs = gameState;
 
-  // Speed: base, +60% during wheelie boost, drop to 30% briefly during crash
-  let speedMult = 1;
-  if (gameState.wheelieT > 0) { gameState.wheelieT -= dt; speedMult = 1.6; }
-  if (gameState.crashT > 0) { gameState.crashT -= dt; speedMult = 0.3; }
-
-  if (!gameState.won) {
-    gameState.km += gameState.speed * dt * speedMult;
-  } else if (gameState.km < 1090) {
-    gameState.km += gameState.speed * dt * 0.5;
+  // Movement: player-controlled. Hold → to accelerate; release = drag.
+  if (gs.won) {
+    gs.speed *= 0.93; // coast down after winning
+  } else if (keys.right && gs.startTime) {
+    gs.speed += gs.accel * dt;
+  } else {
+    gs.speed -= gs.drag * dt;
   }
 
-  // Bike physics
-  if (gameState.bikeAir > 0 || gameState.bikeVY > 0) {
-    gameState.bikeVY -= 11 * dt;
-    gameState.bikeAir += gameState.bikeVY * dt;
-    if (gameState.bikeAir <= 0) { gameState.bikeAir = 0; gameState.bikeVY = 0; }
+  // Slope: positive slope (going uphill) slows; negative (downhill) speeds up.
+  const slope = slopeAt(gs.km);
+  gs.speed -= slope * 70 * dt;
+
+  // Wheelie boost while wheelie-ing
+  if (gs.wheelieT > 0) {
+    gs.wheelieT -= dt;
+    gs.speed = Math.max(gs.speed, gs.maxSpeed * 1.25);
+  }
+  // Crash slows you for the duration
+  if (gs.crashT > 0) {
+    gs.crashT -= dt;
   }
 
-  // Obstacle collision (only when grounded)
-  if (gameState.bikeAir < 0.15 && !gameState.won) {
-    for (const obs of gameState.obstacles) {
+  gs.speed = Math.max(0, Math.min(gs.maxSpeed * 1.3, gs.speed));
+  gs.km += gs.speed * dt;
+
+  // Bike air physics (jumping)
+  if (gs.bikeAir > 0 || gs.bikeVY > 0) {
+    gs.bikeVY -= 11 * dt;
+    gs.bikeAir += gs.bikeVY * dt;
+    if (gs.bikeAir <= 0) { gs.bikeAir = 0; gs.bikeVY = 0; }
+  }
+
+  // Obstacle collision (grounded only). Hazards = full reset to start (timer keeps ticking).
+  if (gs.bikeAir < 0.15 && !gs.won) {
+    for (const obs of gs.obstacles) {
       if (obs.hit) continue;
-      if (Math.abs(obs.km - gameState.km) < 3) {
+      if (Math.abs(obs.km - gs.km) < 3) {
         obs.hit = true;
         if (obs.type === 'ramp') {
-          // Boost launch
-          gameState.bikeVY = 6.2;
+          gs.bikeVY = 6.2;
           gearShift();
         } else {
-          // Crash: cone -12 km, pothole -25 km
-          const setback = obs.type === 'pothole' ? 25 : 12;
-          gameState.km = Math.max(0, gameState.km - setback);
-          gameState.crashT = 0.45;
+          // HAZARD: back to start
+          gs.km = 0;
+          gs.speed = 0;
+          gs.crashT = 0.9;
+          gs.hazardHits++;
           thunk();
+          // Reset crossings and obstacles so the run is "from scratch" again
+          gs.cities.forEach(c => { if (c.km > 0) c.shown = false; });
+          gs.obstacles.forEach(o => { o.hit = false; });
+          break;
         }
       }
     }
   }
 
   // City checks
-  for (const c of gameState.cities) {
-    if (!c.shown && gameState.km >= c.km) {
+  for (const c of gs.cities) {
+    if (!c.shown && gs.km >= c.km) {
       c.shown = true;
-      gameState.banner = { name: c.name, sub: c.sub, t: 0 };
+      const elapsed = gs.startTime ? (performance.now() - gs.startTime) / 1000 : 0;
+      c.time = elapsed;
+      const sub = c.km === 0 ? 'GO!' : `T+${fmtTime(elapsed)}`;
+      gs.banner = { name: c.name, sub, t: 0 };
       bellDing();
-      if (c.name === 'NEW YORK') { gameState.won = true; gameState.finishedAt = performance.now(); }
+      if (c.name === 'NEW YORK') {
+        gs.won = true;
+        gs.finishedAt = performance.now();
+        gs.finalTime = elapsed;
+      }
     }
   }
 
-  if (gameState.banner) {
-    gameState.banner.t += dt;
-    if (gameState.banner.t > 2.6) gameState.banner = null;
+  if (gs.banner) {
+    gs.banner.t += dt;
+    if (gs.banner.t > 2.6) gs.banner = null;
+  }
+
+  // Show leaderboard 3.5s after winning (after celebration is established)
+  if (gs.won && !gs.lbShown && performance.now() - gs.finishedAt > 3500) {
+    gs.lbShown = true;
+    showLeaderboard(gs.route, gs.finalTime, gs.hazardHits);
   }
 
   drawGame();
@@ -1118,71 +1275,92 @@ function drawGame() {
     gctx.fill();
   }
 
-  // Road
+  // Road — curves with terrain elevation. Helper to convert screen X to road Y.
+  const elevScale = 0.55;
+  function roadY(screenX) {
+    const wkm = gameState.km + (screenX - bikeX) / pxPerKm;
+    return groundY - elevAt(wkm) * elevScale;
+  }
   gctx.fillStyle = '#3a3a3a';
-  gctx.fillRect(0, groundY, W, H - groundY);
+  gctx.beginPath();
+  gctx.moveTo(0, H);
+  gctx.lineTo(0, roadY(0));
+  for (let sx = 4; sx <= W; sx += 4) gctx.lineTo(sx, roadY(sx));
+  gctx.lineTo(W, H);
+  gctx.closePath();
+  gctx.fill();
 
-  // Road stripes
+  // Road centre line
+  gctx.strokeStyle = '#5a5a5a';
+  gctx.lineWidth = 2;
+  gctx.beginPath();
+  gctx.moveTo(0, roadY(0) + 1);
+  for (let sx = 4; sx <= W; sx += 4) gctx.lineTo(sx, roadY(sx) + 1);
+  gctx.stroke();
+
+  // Road stripes (follow terrain)
   const stripeScroll = (gameState.km * pxPerKm) % 80;
   gctx.fillStyle = '#ffeb3b';
-  for (let x = -stripeScroll; x < W; x += 80) {
-    gctx.fillRect(x, groundY + 22, 44, 5);
+  for (let sx = -stripeScroll; sx < W; sx += 80) {
+    const y = roadY(sx + 22);
+    gctx.save();
+    gctx.translate(sx + 22, y + 22);
+    gctx.fillRect(-22, 0, 44, 5);
+    gctx.restore();
   }
 
-  // Obstacles: cones, potholes, ramps
+  // Obstacles: cones, potholes, ramps (sit on the curving road)
   for (const obs of gameState.obstacles) {
     const screenX = bikeX + (obs.km - gameState.km) * pxPerKm;
     if (screenX < -60 || screenX > W + 60) continue;
+    const gY = roadY(screenX);
     const dim = obs.hit ? 0.45 : 1;
     if (obs.type === 'cone') {
       gctx.globalAlpha = dim;
       gctx.fillStyle = '#ff5500';
       gctx.beginPath();
-      gctx.moveTo(screenX - 7, groundY);
-      gctx.lineTo(screenX + 19, groundY);
-      gctx.lineTo(screenX + 6, groundY - 26);
+      gctx.moveTo(screenX - 7, gY);
+      gctx.lineTo(screenX + 19, gY);
+      gctx.lineTo(screenX + 6, gY - 26);
       gctx.closePath();
       gctx.fill();
       gctx.fillStyle = '#fff';
-      gctx.fillRect(screenX - 1, groundY - 13, 14, 3);
+      gctx.fillRect(screenX - 1, gY - 13, 14, 3);
       gctx.globalAlpha = 1;
     } else if (obs.type === 'pothole') {
       gctx.globalAlpha = dim;
-      // Dark hole on the road surface
       gctx.fillStyle = '#000';
       gctx.beginPath();
-      gctx.ellipse(screenX + 9, groundY + 14, 22, 9, 0, 0, Math.PI * 2);
+      gctx.ellipse(screenX + 9, gY + 14, 22, 9, 0, 0, Math.PI * 2);
       gctx.fill();
       gctx.fillStyle = '#1a1a1a';
       gctx.beginPath();
-      gctx.ellipse(screenX + 9, groundY + 16, 16, 6, 0, 0, Math.PI * 2);
+      gctx.ellipse(screenX + 9, gY + 16, 16, 6, 0, 0, Math.PI * 2);
       gctx.fill();
-      // Crack hints around it
       gctx.strokeStyle = '#222';
       gctx.lineWidth = 1.5;
       gctx.beginPath();
-      gctx.moveTo(screenX - 12, groundY + 8);
-      gctx.lineTo(screenX - 4, groundY + 12);
-      gctx.moveTo(screenX + 28, groundY + 10);
-      gctx.lineTo(screenX + 36, groundY + 14);
+      gctx.moveTo(screenX - 12, gY + 8);
+      gctx.lineTo(screenX - 4, gY + 12);
+      gctx.moveTo(screenX + 28, gY + 10);
+      gctx.lineTo(screenX + 36, gY + 14);
       gctx.stroke();
       gctx.globalAlpha = 1;
     } else if (obs.type === 'ramp') {
       gctx.globalAlpha = dim;
       gctx.fillStyle = '#8b4513';
       gctx.beginPath();
-      gctx.moveTo(screenX - 6, groundY);
-      gctx.lineTo(screenX + 40, groundY);
-      gctx.lineTo(screenX + 40, groundY - 32);
+      gctx.moveTo(screenX - 6, gY);
+      gctx.lineTo(screenX + 40, gY);
+      gctx.lineTo(screenX + 40, gY - 32);
       gctx.closePath();
       gctx.fill();
-      // Yellow stripes
       gctx.fillStyle = '#ffeb3b';
       for (let i = 0; i < 3; i++) {
         const sx1 = screenX - 6 + i * 14;
         const sx2 = screenX - 6 + (i + 1) * 14;
-        const sy1 = groundY - (sx1 - (screenX - 6)) * (32 / 46);
-        const sy2 = groundY - (sx2 - (screenX - 6)) * (32 / 46);
+        const sy1 = gY - (sx1 - (screenX - 6)) * (32 / 46);
+        const sy2 = gY - (sx2 - (screenX - 6)) * (32 / 46);
         gctx.beginPath();
         gctx.moveTo(sx1, sy1);
         gctx.lineTo(sx2, sy2);
@@ -1195,26 +1373,25 @@ function drawGame() {
     }
   }
 
-  // City flags
+  // City flags (planted on the road)
   for (const c of gameState.cities) {
     const screenX = bikeX + (c.km - gameState.km) * pxPerKm;
     if (screenX < -120 || screenX > W + 120) continue;
-    // pole
+    const gY = roadY(screenX);
     gctx.fillStyle = '#000';
-    gctx.fillRect(screenX, groundY - 110, 3, 110);
-    // flag
+    gctx.fillRect(screenX, gY - 110, 3, 110);
     gctx.fillStyle = c.shown ? '#ff00aa' : '#444';
     gctx.beginPath();
-    gctx.moveTo(screenX + 3, groundY - 110);
-    gctx.lineTo(screenX + 70, groundY - 100);
-    gctx.lineTo(screenX + 3, groundY - 90);
+    gctx.moveTo(screenX + 3, gY - 110);
+    gctx.lineTo(screenX + 70, gY - 100);
+    gctx.lineTo(screenX + 3, gY - 90);
     gctx.closePath();
     gctx.fill();
     gctx.fillStyle = '#fff';
     gctx.font = 'bold 11px "Tahoma", sans-serif';
     gctx.textAlign = 'left';
     gctx.textBaseline = 'middle';
-    gctx.fillText(c.name.slice(0, 7), screenX + 8, groundY - 100);
+    gctx.fillText(c.name.slice(0, 7), screenX + 8, gY - 100);
   }
 
   // Bike + rider (or celebration scene if won)
@@ -1222,18 +1399,20 @@ function drawGame() {
   const celebrating = winSec >= 0.9;
 
   if (!celebrating) {
-    // Normal riding: 🚴 mirrored to face right (direction of travel)
-    const bikeY = groundY - 4 - gameState.bikeAir * 28;
+    // Normal riding: 🚴 mirrored to face right, sitting on the curving road
     const inAir = gameState.bikeAir > 0.05;
     const isWheelie = gameState.wheelieT > 0;
     const isCrashed = gameState.crashT > 0;
-    const rotation = isCrashed ? 0.5 : (isWheelie ? -0.7 : (inAir ? -0.45 : 0));
-    // Pedaling bob: subtle vertical wobble when grounded
+    const bikeRoadY = roadY(bikeX);
+    const bikeY = bikeRoadY - 4 - gameState.bikeAir * 28;
+    // Slope tilt for visual hill feedback (uphill = lean back, downhill = lean forward)
+    const slopeTilt = -slopeAt(gameState.km) * 0.35;
+    const rotation = isCrashed ? 0.5 : (isWheelie ? -0.7 : (inAir ? -0.45 : slopeTilt));
     const pedalBob = (!inAir && !isCrashed) ? Math.sin(performance.now() / 90) * 1.2 : 0;
     gctx.save();
     gctx.translate(bikeX, bikeY + pedalBob);
-    gctx.scale(-1, 1);             // mirror so bike faces right
-    gctx.rotate(-rotation);        // negate to keep poses visually correct
+    gctx.scale(-1, 1);
+    gctx.rotate(-rotation);
     gctx.font = (isWheelie ? '46px' : '40px') + ' "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
     gctx.textAlign = 'center';
     gctx.textBaseline = 'bottom';
@@ -1307,21 +1486,41 @@ function drawGame() {
     }
   }
 
-  // HUD: distance
+  // HUD: timer (top-left, two rows)
+  const elapsed = gameState.startTime
+    ? (gameState.won ? gameState.finalTime : (performance.now() - gameState.startTime) / 1000)
+    : 0;
   gctx.fillStyle = 'rgba(0,0,0,0.78)';
-  gctx.fillRect(8, 8, 150, 30);
+  gctx.fillRect(8, 8, 174, 48);
   gctx.fillStyle = '#00ff66';
-  gctx.font = 'bold 14px "Courier New", monospace';
+  gctx.font = 'bold 18px "Courier New", monospace';
   gctx.textAlign = 'left';
   gctx.textBaseline = 'middle';
-  gctx.fillText(`${Math.floor(Math.min(gameState.km, 1065))} / 1065 KM`, 16, 23);
+  gctx.fillText(`T+ ${fmtTime(elapsed)}`, 16, 24);
+  gctx.fillStyle = '#fff';
+  gctx.font = 'bold 11px "Courier New", monospace';
+  gctx.fillText(`${Math.floor(Math.min(gameState.km, 1065))} / 1065 KM`, 16, 44);
+  if (gameState.hazardHits > 0) {
+    gctx.fillStyle = '#ff5555';
+    gctx.fillText(`× ${gameState.hazardHits} crash${gameState.hazardHits === 1 ? '' : 'es'}`, 100, 44);
+  }
 
-  // HUD: hint
+  // HUD: hint (top-right)
   gctx.fillStyle = 'rgba(0,0,0,0.65)';
-  gctx.fillRect(W - 168, 8, 160, 30);
+  gctx.fillRect(W - 226, 8, 218, 48);
   gctx.fillStyle = '#fff';
   gctx.font = 'bold 11px "Tahoma", sans-serif';
-  gctx.fillText('↓ JUMP  ·  ← WHEELIE', W - 160, 23);
+  gctx.fillText('→ HOLD TO GO', W - 218, 24);
+  gctx.fillText('↓ JUMP  ·  ← WHEELIE', W - 218, 42);
+  if (!gameState.startTime && !gameState.won) {
+    // Press-to-start pulse
+    const pulse = 0.6 + 0.4 * Math.sin(performance.now() / 200);
+    gctx.fillStyle = `rgba(255,0,170,${pulse})`;
+    gctx.font = 'bold 14px "Tahoma", sans-serif';
+    gctx.textAlign = 'center';
+    gctx.fillText('▶ PRESS → TO START', W / 2, 38);
+    gctx.textAlign = 'left';
+  }
 
   // Banner
   if (gameState.banner) {
@@ -1357,17 +1556,103 @@ function drawGame() {
   }
 }
 
-gameCanvas.addEventListener('click', () => {
-  gameCanvas.focus();
-  if (gameState && gameState.won && performance.now() - gameState.finishedAt > 2700) {
-    gameState = newGameState(gameState.route);
+gameCanvas.addEventListener('click', () => { gameCanvas.focus(); });
+
+// ===== LEADERBOARD =====
+function lbKey(route) { return 'bike_lb_' + route; }
+function getLB(route) {
+  try { return JSON.parse(localStorage.getItem(lbKey(route))) || []; }
+  catch { return []; }
+}
+function saveLB(route, time, crashes) {
+  const lb = getLB(route);
+  lb.push({ time, crashes, when: Date.now() });
+  lb.sort((a, b) => a.time - b.time);
+  const trimmed = lb.slice(0, 10);
+  localStorage.setItem(lbKey(route), JSON.stringify(trimmed));
+  return trimmed;
+}
+
+function showLeaderboard(route, finalTime, crashes) {
+  const lb = saveLB(route, finalTime, crashes);
+  const list = document.getElementById('lb-list');
+  list.innerHTML = '';
+  const top = lb.slice(0, 5);
+  top.forEach(entry => {
+    const li = document.createElement('li');
+    const crashTxt = entry.crashes ? ` · ${entry.crashes}✕` : '';
+    li.textContent = `${fmtTime(entry.time)}${crashTxt}`;
+    if (Math.abs(entry.time - finalTime) < 0.001 && entry.when === lb[0].when) {
+      li.classList.add('current');
+    } else if (Math.abs(entry.time - finalTime) < 0.001) {
+      li.classList.add('current');
+    }
+    list.appendChild(li);
+  });
+  if (top.length === 0) {
+    list.innerHTML = '<li>(no times yet)</li>';
   }
-});
+  document.getElementById('lb-your-time').textContent = `YOUR TIME: ${fmtTime(finalTime)}`;
+  document.getElementById('lb-your-route').textContent = `${route.toUpperCase()} ROUTE · ${crashes} crash${crashes === 1 ? '' : 'es'}`;
+  document.getElementById('lb-popup').classList.add('show');
+}
+function hideLeaderboard() {
+  document.getElementById('lb-popup').classList.remove('show');
+}
+
+document.getElementById('lb-close').onclick = hideLeaderboard;
+document.getElementById('lb-replay').onclick = () => {
+  hideLeaderboard();
+  const route = gameState ? gameState.route : 'excited';
+  startGame(route);
+};
+document.getElementById('lb-back').onclick = () => {
+  hideLeaderboard();
+  stopGame();
+  document.querySelector('input[name="route"][value="standard"]').checked = true;
+  document.body.classList.remove('excited');
+  renderRoute('standard');
+};
+
+// ===== TOUCH CONTROLS =====
+function bindHold(btnId, onPress, onRelease) {
+  const btn = document.getElementById(btnId);
+  const press = (e) => { e.preventDefault(); btn.classList.add('held'); onPress(); };
+  const release = (e) => { e.preventDefault(); btn.classList.remove('held'); if (onRelease) onRelease(); };
+  btn.addEventListener('touchstart', press, { passive: false });
+  btn.addEventListener('touchend', release, { passive: false });
+  btn.addEventListener('touchcancel', release, { passive: false });
+  btn.addEventListener('mousedown', press);
+  btn.addEventListener('mouseup', release);
+  btn.addEventListener('mouseleave', release);
+}
+bindHold('touch-go',
+  () => { keys.right = true; if (gameState && !gameState.startTime && !gameState.won) gameState.startTime = performance.now(); },
+  () => { keys.right = false; }
+);
+function bindTap(btnId, fn) {
+  const btn = document.getElementById(btnId);
+  const fire = (e) => { e.preventDefault(); btn.classList.add('held'); fn(); setTimeout(() => btn.classList.remove('held'), 150); };
+  btn.addEventListener('touchstart', fire, { passive: false });
+  btn.addEventListener('mousedown', fire);
+}
+bindTap('touch-jump', () => { if (gameRunning) jumpBike(); });
+bindTap('touch-wheelie', () => { if (gameRunning) gameWheelie(); });
 
 gameCanvas.addEventListener('keydown', (e) => {
   if (!gameRunning) return;
-  if (e.key === 'ArrowDown') { e.preventDefault(); jumpBike(); }
-  else if (e.key === 'ArrowLeft') { e.preventDefault(); gameWheelie(); }
+  if (e.key === 'ArrowDown')  { e.preventDefault(); keys.down = true;  jumpBike(); }
+  else if (e.key === 'ArrowLeft')  { e.preventDefault(); keys.left = true;  gameWheelie(); }
+  else if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    keys.right = true;
+    if (gameState && !gameState.startTime && !gameState.won) gameState.startTime = performance.now();
+  }
+});
+gameCanvas.addEventListener('keyup', (e) => {
+  if (e.key === 'ArrowDown')  keys.down = false;
+  else if (e.key === 'ArrowLeft')  keys.left = false;
+  else if (e.key === 'ArrowRight') keys.right = false;
 });
 
 function gameWheelie() {

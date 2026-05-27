@@ -57,12 +57,20 @@ Two itineraries share the same Route 5 + Empire State Trail corridor — toggle 
 
 **Standard / Aggressive modes** — click the map to focus. `↑↓→` ride the bike around. `←` wheelies (silent). `ENTER` (or `▶ PLAY`) auto-rides along the route; `■ STOP` bails.
 
-**Side-scroller game** — Aggressive and Excited routes both have a side-scrolling game. Click `▶ PLAY` on the map toolbar (Aggressive) or just select `🚲💨 EXCITED BIKE` (auto-launches). Bike auto-runs. `↓` to jump, `←` for a wheelie speed-boost. Three obstacle types:
-- 🟠 cones — jump or eat a 12 km setback (thunk)
-- ⚫ potholes — jump or eat a 25 km setback (thunk)
-- 🟫 ramps — roll over them grounded for an auto-launch boost (shift up)
+**Side-scroller time attack** — Aggressive and Excited routes both have a side-scrolling game. Click `▶ PLAY` on the map toolbar (Aggressive) or just select `🚲💨 EXCITED BIKE`. The bike does **not** auto-run — you have to pedal:
 
-Checkpoints per route — Aggressive has 5 city flags (Batavia → Syracuse → Amsterdam → Poughkeepsie → NYC); Excited has 3 (Rochester → Albany → NYC). Each crossing pops a pink banner with the day's distance + a bell ding. Reach NYC and the rider dismounts, pumps the bike overhead, and 5 friends slide in cheering.
+- `→` (hold) — accelerate (release = drag)
+- `↓` — jump
+- `←` — wheelie (1s speed boost)
+
+The road has rolling hills — uphill slows you, downhill speeds you up. Three obstacle types:
+- 🟠 cones — grounded hit = **bike resets to km 0** (timer keeps ticking — that's the penalty)
+- ⚫ potholes — same brutal reset
+- 🟫 ramps — friendly: grounded hit = auto-launch boost
+
+Goal: reach NYC in the fastest time. Each city flag pops a banner with your `T+time` at that checkpoint + a bell ding. At NYC the rider dismounts, pumps the bike overhead, 5 friends slide in cheering, then a **leaderboard popup** shows your time vs. your top 5 best (stored per-route in `localStorage`).
+
+**Mobile** — touch buttons appear bottom-right when on a touch device or small viewport: big pink `→` (hold to go), `↓` (tap to jump), `←` (tap to wheelie). Sidebar collapses while game is active to give the canvas full screen.
 
 **Sounds** (Web Audio API, no audio files): doppler car whooshes pass every few seconds during a ride; gear-shift clicks fire occasionally on their own and on wheelies/ramps; bike-bell ding marks city crossings; low thunk on crash.
 
