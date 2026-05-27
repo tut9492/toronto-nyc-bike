@@ -18,23 +18,9 @@ python3 -m http.server 8000
 - `index.html` — static viewer (Leaflet + OpenStreetMap). Sidebar tabs for Days, Hotels, Waypoints. Click a card to fly the map to it.
 - `route.kml` — source data, exported from Google My Maps. The data inlined in `index.html` was derived from this.
 
-## Routes
+## The Trip
 
-Two itineraries share the same Route 5 + Empire State Trail corridor — toggle in the viewer.
-
-**Standard (7 days + 1 rest):**
-
-| Day | To | Distance |
-|-----|----|----|
-| 1 | Buffalo | ~160 km |
-| 2 | Rochester | ~175 km |
-| 3 | Syracuse | ~165 km |
-| 4+5 | Utica (+ rest day) | ~100 km |
-| 6 | Albany | ~175 km |
-| 7 | Poughkeepsie | ~160 km |
-| 8 | New York City | ~130 km |
-
-**Aggressive (5 riding days + rest after Syracuse, 200+ km days):**
+5 riding days + 1 rest after Syracuse via Route 5 + Empire State Trail:
 
 | Day | To | Distance |
 |-----|----|----|
@@ -45,19 +31,11 @@ Two itineraries share the same Route 5 + Empire State Trail corridor — toggle 
 | 5 | Poughkeepsie | ~215 km |
 | 6 | New York City | ~130 km (arrival) |
 
-**Excited Bike (3 days, do not actually do this):**
-
-| Day | To | Distance |
-|-----|----|----|
-| 1 | Rochester | ~335 km |
-| 2 | Albany | ~440 km |
-| 3 | NYC | ~290 km |
-
 ## Bike playground
 
-**Standard / Aggressive modes** — click the map to focus. `↑↓→` ride the bike around. `←` wheelies (silent). `ENTER` (or `▶ PLAY`) auto-rides along the route; `■ STOP` bails.
+**Map view** — `▶ PLAY` on the map toolbar (or `ENTER` with map focused) runs an auto-ride along the route with engine sound. `↑↓→` move the bike marker manually, `←` does a silent wheelie, `■ STOP` bails.
 
-**Side-scroller time attack** — Aggressive and Excited routes both have a side-scrolling game. Click `▶ PLAY` on the map toolbar (Aggressive) or just select `🚲💨 EXCITED BIKE`. The bike does **not** auto-run — you have to pedal:
+**Side-scroller time attack** — launched from the welcome popup or the pink `🎮 PLAY THE GAME` button in the sidebar. The bike does **not** auto-run — you have to pedal:
 
 - `→` (hold) — accelerate (release = drag)
 - `↓` — jump

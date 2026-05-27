@@ -113,6 +113,34 @@
     font-weight: 700;
     font-size: 11px;
   }
+  .trip-headline { font-family: "Courier New", monospace; font-size: 22px; font-weight: 900; color: var(--accent); text-align: center; letter-spacing: 0.06em; line-height: 1; margin: 4px 0 6px; }
+  .trip-sub { text-align: center; font-size: 11px; color: var(--gray-darker); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+  .play-game-btn {
+    display: block;
+    width: calc(100% - 16px);
+    margin: 4px 8px 12px;
+    background: #ff00aa;
+    color: #fff;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    padding: 12px 16px;
+    border-top: 2px solid #ff66cc;
+    border-left: 2px solid #ff66cc;
+    border-right: 2px solid #6b0049;
+    border-bottom: 2px solid #6b0049;
+    box-shadow: 2px 2px 0 var(--ink);
+    cursor: pointer;
+    text-shadow: 1px 1px 0 #6b0049;
+    animation: welcomePulse 1.6s ease-in-out infinite;
+  }
+  .play-game-btn:active {
+    border-top-color: #6b0049; border-left-color: #6b0049;
+    border-right-color: #ff66cc; border-bottom-color: #ff66cc;
+    box-shadow: none;
+    transform: translate(2px, 2px);
+  }
   .radio-row { display: flex; flex-direction: column; gap: 4px; }
   .radio-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 2px 4px; }
   .radio-row label:hover { background: var(--title-from); color: var(--light); }
@@ -554,18 +582,17 @@
     <div class="scroll-area">
 
       <div class="fieldset">
-        <div class="fieldset-legend">Route Selection</div>
-        <div class="radio-row">
-          <label><input type="radio" name="route" value="standard" checked> Standard &mdash; 7 days + rest</label>
-          <label><input type="radio" name="route" value="aggressive"> Aggressive &mdash; 5 days + rest <span class="weird-stamp">200KM+</span></label>
-          <label><input type="radio" name="route" value="excited"> 🚲💨 EXCITED BIKE &mdash; 3 days <span class="weird-stamp stamp-hype">DO NOT</span></label>
-        </div>
+        <div class="fieldset-legend">The Trip</div>
+        <div class="trip-headline">5 DAYS + 1 REST</div>
+        <div class="trip-sub">Toronto → NYC · ~1,065 km</div>
       </div>
 
       <div class="fieldset">
         <div class="fieldset-legend">Trip Stats</div>
         <div class="stats-row" id="summary"></div>
       </div>
+
+      <button class="play-game-btn" id="sidebar-play">🎮 PLAY THE GAME</button>
 
     </div>
 
@@ -580,7 +607,7 @@
 
     <div class="statusbar">
       <div class="statusbar-cell">READY</div>
-      <div class="statusbar-cell" id="status-route">Route: standard</div>
+      <div class="statusbar-cell" id="status-route">Route: 5-day + rest</div>
       <div class="statusbar-cell right">1,065 KB loaded</div>
     </div>
   </div>
@@ -809,7 +836,7 @@ function clear(arr) { arr.forEach(m => map.removeLayer(m)); arr.length = 0; }
 
 function renderRoute(routeKey) {
   const itin = ITINERARIES[routeKey];
-  document.getElementById('status-route').textContent = `Route: ${routeKey}`;
+  document.getElementById('status-route').textContent = 'Route: 5-day + rest';
 
   const sumEl = document.getElementById('summary');
   sumEl.innerHTML = itin.stats.map(s =>
@@ -919,20 +946,10 @@ document.querySelectorAll('.tab-btn').forEach(tab => {
   };
 });
 
-document.querySelectorAll('input[name="route"]').forEach(radio => {
-  radio.onchange = () => {
-    if (!radio.checked) return;
-    const route = radio.value;
-    document.body.classList.toggle('excited', route === 'excited');
-    renderRoute(route);
-    if (route === 'excited') {
-      stopAutoRide();
-      startGame('excited');
-    } else {
-      stopGame();
-    }
-  };
-});
+document.getElementById('sidebar-play').onclick = () => {
+  stopAutoRide();
+  startGame('aggressive');
+};
 
 // ===== BIKE SOUNDS (Web Audio synth — no audio files) =====
 let audioCtx = null;
@@ -1116,15 +1133,8 @@ function resetBike() {
   map.flyTo([42.3, -76.5], 7);
 }
 
-document.getElementById('btn-ride').onclick = () => {
-  const route = document.querySelector('input[name="route"]:checked').value;
-  if (route === 'aggressive' || route === 'excited') {
-    startGame(route);
-  } else {
-    resetBike();
-    startAutoRide();
-  }
-};
+// Map PLAY button always shows the bike adventure on the MAP — never the game.
+document.getElementById('btn-ride').onclick = () => { resetBike(); startAutoRide(); };
 document.getElementById('btn-stop').onclick = () => { stopAutoRide(); stopGame(); };
 
 document.addEventListener('keydown', (e) => {
@@ -2067,9 +2077,6 @@ document.getElementById('lb-replay').onclick = () => {
 document.getElementById('lb-back').onclick = () => {
   hideLeaderboard();
   stopGame();
-  document.querySelector('input[name="route"][value="standard"]').checked = true;
-  document.body.classList.remove('excited');
-  renderRoute('standard');
 };
 
 document.getElementById('lb-submit').onclick = async () => {
@@ -2143,9 +2150,8 @@ document.getElementById('welcome-close').onclick = hideWelcome;
 document.getElementById('welcome-plan').onclick = hideWelcome;
 document.getElementById('welcome-play').onclick = () => {
   hideWelcome();
-  const radio = document.querySelector('input[name="route"][value="excited"]');
-  radio.checked = true;
-  radio.dispatchEvent(new Event('change'));
+  stopAutoRide();
+  startGame('aggressive');
 };
 
 gameCanvas.addEventListener('keydown', (e) => {
@@ -2185,7 +2191,7 @@ document.querySelectorAll('.win-btn').forEach(btn => {
   };
 });
 
-renderRoute('standard');
+renderRoute('aggressive');
 setTimeout(() => map.invalidateSize(), 50);
 </script>
 </body>
