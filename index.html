@@ -304,8 +304,9 @@
     image-rendering: pixelated;
     cursor: pointer;
   }
-  body.excited #map { display: none; }
-  body.excited #game { display: block; }
+  body.game-active #map { display: none; }
+  body.game-active #game { display: block; }
+  body.game-active .map-hint { display: none; }
   .bike-wrap {
     width: 36px; height: 36px;
     display: flex; align-items: center; justify-content: center;
@@ -702,15 +703,14 @@ document.querySelectorAll('.tab-btn').forEach(tab => {
 document.querySelectorAll('input[name="route"]').forEach(radio => {
   radio.onchange = () => {
     if (!radio.checked) return;
-    const isExcited = radio.value === 'excited';
-    document.body.classList.toggle('excited', isExcited);
-    renderRoute(radio.value);
-    if (isExcited) {
+    const route = radio.value;
+    document.body.classList.toggle('excited', route === 'excited');
+    renderRoute(route);
+    if (route === 'excited') {
       stopAutoRide();
-      startGame();
+      startGame('excited');
     } else {
       stopGame();
-      setTimeout(() => map.invalidateSize(), 50);
     }
   };
 });
@@ -891,8 +891,16 @@ function resetBike() {
   map.flyTo([42.3, -76.5], 7);
 }
 
-document.getElementById('btn-ride').onclick = () => { resetBike(); startAutoRide(); };
-document.getElementById('btn-stop').onclick = stopAutoRide;
+document.getElementById('btn-ride').onclick = () => {
+  const route = document.querySelector('input[name="route"]:checked').value;
+  if (route === 'aggressive' || route === 'excited') {
+    startGame(route);
+  } else {
+    resetBike();
+    startAutoRide();
+  }
+};
+document.getElementById('btn-stop').onclick = () => { stopAutoRide(); stopGame(); };
 
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT') return;
@@ -925,8 +933,29 @@ let gameRAF = null;
 let gameState = null;
 let gameLastT = 0;
 
-function newGameState() {
+const CHECKPOINTS = {
+  excited: [
+    { km: 0,    name: 'TORONTO',   sub: 'START',                       shown: true },
+    { km: 335,  name: 'ROCHESTER', sub: 'DAY 1 · ~335 KM · ULTRA',     shown: false },
+    { km: 775,  name: 'ALBANY',    sub: 'DAY 2 · ~440 KM · INHUMAN',   shown: false },
+    { km: 1065, name: 'NEW YORK',  sub: 'DAY 3 · ~290 KM · VICTORY',   shown: false }
+  ],
+  aggressive: [
+    { km: 0,    name: 'TORONTO',      sub: 'START',                       shown: true },
+    { km: 230,  name: 'BATAVIA',      sub: 'DAY 1 · ~230 KM',             shown: false },
+    { km: 500,  name: 'SYRACUSE',     sub: 'DAY 2 · ~275 KM · REST EARNED', shown: false },
+    { km: 725,  name: 'AMSTERDAM',    sub: 'DAY 4 · ~225 KM',             shown: false },
+    { km: 935,  name: 'POUGHKEEPSIE', sub: 'DAY 5 · ~215 KM',             shown: false },
+    { km: 1065, name: 'NEW YORK',     sub: 'DAY 6 · ~130 KM · FINISH',    shown: false }
+  ]
+};
+
+function newGameState(route = 'excited') {
+  const cities = CHECKPOINTS[route].map(c => ({ ...c }));
+  const cityKms = cities.map(c => c.km);
+  const totalDays = route === 'excited' ? 3 : 5;
   return {
+    route,
     km: 0,
     bikeAir: 0,
     bikeVY: 0,
@@ -935,18 +964,13 @@ function newGameState() {
     finishedAt: null,
     wheelieT: 0,
     crashT: 0,
-    cities: [
-      { km: 0,    name: 'TORONTO',   sub: 'START',                  shown: true },
-      { km: 335,  name: 'ROCHESTER', sub: 'DAY 1 · ~335 KM · ULTRA',   shown: false },
-      { km: 775,  name: 'ALBANY',    sub: 'DAY 2 · ~440 KM · INHUMAN', shown: false },
-      { km: 1065, name: 'NEW YORK',  sub: 'DAY 3 · ~290 KM · VICTORY', shown: false }
-    ],
+    winText: `1,065 KM IN ${totalDays} DAYS · ` + (route === 'excited' ? 'THE BIKE IS PROUD' : 'YOU EARNED THIS'),
+    cities,
     obstacles: (() => {
       const obs = []; let k = 100;
       const types = ['cone', 'pothole', 'ramp'];
       while (k < 1040) {
-        // Don't put hazards too close to city flags
-        const nearCity = [0, 335, 775, 1065].some(ck => Math.abs(ck - k) < 30);
+        const nearCity = cityKms.some(ck => Math.abs(ck - k) < 30);
         if (!nearCity) obs.push({ km: k, type: types[Math.floor(Math.random() * 3)], hit: false });
         k += 55 + Math.random() * 100;
       }
@@ -962,10 +986,13 @@ function resizeGame() {
   gameCanvas.height = Math.floor(r.height);
 }
 
-function startGame() {
-  if (gameRunning) return;
+function startGame(route = 'excited') {
+  if (gameRunning) stopGame();
   gameRunning = true;
-  gameState = newGameState();
+  gameState = newGameState(route);
+  document.body.classList.add('game-active');
+  document.getElementById('btn-ride').style.display = 'none';
+  document.getElementById('btn-stop').style.display = '';
   resizeGame();
   gameCanvas.focus();
   startAmbient();
@@ -978,6 +1005,10 @@ function stopGame() {
   if (gameRAF) cancelAnimationFrame(gameRAF);
   gameRAF = null;
   stopAmbient();
+  document.body.classList.remove('game-active');
+  document.getElementById('btn-ride').style.display = '';
+  document.getElementById('btn-stop').style.display = 'none';
+  setTimeout(() => map.invalidateSize(), 50);
 }
 
 function jumpBike() {
@@ -1185,44 +1216,89 @@ function drawGame() {
     gctx.fillText(c.name.slice(0, 7), screenX + 8, groundY - 100);
   }
 
-  // Bike
-  const bikeY = groundY - 4 - gameState.bikeAir * 28;
-  const inAir = gameState.bikeAir > 0.05;
-  const isWheelie = gameState.wheelieT > 0;
-  const isCrashed = gameState.crashT > 0;
-  const rotation = isCrashed ? 0.5 : (isWheelie ? -0.7 : (inAir ? -0.45 : 0));
-  gctx.save();
-  gctx.translate(bikeX, bikeY);
-  gctx.rotate(rotation);
-  gctx.font = (isWheelie ? '46px' : '38px') + ' "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
-  gctx.textAlign = 'center';
-  gctx.textBaseline = 'bottom';
-  gctx.fillText('🚲', 0, 4);
-  gctx.restore();
-  // Speed lines (more during wheelie boost)
-  if (!inAir && !isCrashed) {
-    gctx.strokeStyle = isWheelie ? 'rgba(255,0,170,0.85)' : 'rgba(255,255,255,0.6)';
-    gctx.lineWidth = isWheelie ? 3 : 2;
-    const count = isWheelie ? 5 : 3;
-    for (let i = 0; i < count; i++) {
-      const lx = bikeX - 24 - i * 14 - (gameState.km * 4) % 8;
-      gctx.beginPath();
-      gctx.moveTo(lx, bikeY - 12 - i * 4);
-      gctx.lineTo(lx - (isWheelie ? 20 : 12), bikeY - 12 - i * 4);
-      gctx.stroke();
-    }
-  }
-  // Crash flash + "OUCH"
-  if (isCrashed) {
-    gctx.fillStyle = `rgba(255, 0, 0, ${gameState.crashT * 0.4})`;
-    gctx.fillRect(0, 0, W, H);
-    gctx.fillStyle = '#fff';
-    gctx.strokeStyle = '#000';
-    gctx.lineWidth = 3;
-    gctx.font = 'bold 22px "Tahoma", sans-serif';
+  // Bike + rider (or celebration scene if won)
+  const winSec = gameState.won ? (performance.now() - gameState.finishedAt) / 1000 : -1;
+  const celebrating = winSec >= 0.9;
+
+  if (!celebrating) {
+    // Normal riding: 🚴 (person on bike emoji has rider built in)
+    const bikeY = groundY - 4 - gameState.bikeAir * 28;
+    const inAir = gameState.bikeAir > 0.05;
+    const isWheelie = gameState.wheelieT > 0;
+    const isCrashed = gameState.crashT > 0;
+    const rotation = isCrashed ? 0.5 : (isWheelie ? -0.7 : (inAir ? -0.45 : 0));
+    // Pedaling bob: subtle vertical wobble when grounded
+    const pedalBob = (!inAir && !isCrashed) ? Math.sin(performance.now() / 90) * 1.2 : 0;
+    gctx.save();
+    gctx.translate(bikeX, bikeY + pedalBob);
+    gctx.rotate(rotation);
+    gctx.font = (isWheelie ? '46px' : '40px') + ' "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
     gctx.textAlign = 'center';
-    gctx.strokeText('OUCH', bikeX, bikeY - 40);
-    gctx.fillText('OUCH', bikeX, bikeY - 40);
+    gctx.textBaseline = 'bottom';
+    gctx.fillText('🚴', 0, 4);
+    gctx.restore();
+    // Speed lines (more during wheelie boost)
+    if (!inAir && !isCrashed) {
+      gctx.strokeStyle = isWheelie ? 'rgba(255,0,170,0.85)' : 'rgba(255,255,255,0.6)';
+      gctx.lineWidth = isWheelie ? 3 : 2;
+      const count = isWheelie ? 5 : 3;
+      for (let i = 0; i < count; i++) {
+        const lx = bikeX - 24 - i * 14 - (gameState.km * 4) % 8;
+        gctx.beginPath();
+        gctx.moveTo(lx, bikeY - 12 - i * 4);
+        gctx.lineTo(lx - (isWheelie ? 20 : 12), bikeY - 12 - i * 4);
+        gctx.stroke();
+      }
+    }
+    // Crash flash + "OUCH"
+    if (isCrashed) {
+      gctx.fillStyle = `rgba(255, 0, 0, ${gameState.crashT * 0.4})`;
+      gctx.fillRect(0, 0, W, H);
+      gctx.fillStyle = '#fff';
+      gctx.strokeStyle = '#000';
+      gctx.lineWidth = 3;
+      gctx.font = 'bold 22px "Tahoma", sans-serif';
+      gctx.textAlign = 'center';
+      gctx.strokeText('OUCH', bikeX, bikeY - 40);
+      gctx.fillText('OUCH', bikeX, bikeY - 40);
+    }
+  } else {
+    // Celebration: rider dismounts, lifts bike overhead, friends arrive cheering
+    const bounce = Math.sin(performance.now() / 180) * 5;
+    const liftP = Math.min(1, (winSec - 0.9) / 0.8);  // 0..1 over 0.8s
+    const bikeLift = 14 + liftP * 64;
+    const armUp = liftP > 0.5;
+
+    gctx.font = '40px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+    gctx.textAlign = 'center';
+    gctx.textBaseline = 'bottom';
+
+    // Rider
+    const riderEmoji = liftP >= 1 ? '🙆' : '🧍';
+    gctx.fillText(riderEmoji, bikeX, groundY + 4 + (liftP >= 1 ? bounce : 0));
+    // Bike — rising up then held high
+    gctx.fillText('🚲', bikeX, groundY + 4 - bikeLift + (liftP >= 1 ? bounce * 0.4 : 0));
+
+    // Friends slide in from right after 2s
+    if (winSec >= 2) {
+      const arrival = Math.min(1, (winSec - 2) / 0.7);
+      const ease = 1 - Math.pow(1 - arrival, 3);
+      const friends = ['🙋', '🥳', '🙌', '🙋‍♀️', '🙋‍♂️'];
+      for (let i = 0; i < friends.length; i++) {
+        const targetX = bikeX + 70 + i * 56;
+        const startX = W + 80;
+        const x = startX + (targetX - startX) * ease;
+        const fBounce = Math.sin(performance.now() / 180 + i * 0.7) * 6;
+        gctx.fillText(friends[i], x, groundY + 4 + fBounce);
+      }
+      // Sparkles around the lifted bike
+      if (Math.random() < 0.4) {
+        gctx.font = '18px sans-serif';
+        const sx = bikeX + (Math.random() - 0.5) * 60;
+        const sy = groundY + 4 - bikeLift - 20 + (Math.random() - 0.5) * 20;
+        gctx.fillText('✨', sx, sy);
+      }
+    }
   }
 
   // HUD: distance
@@ -1258,26 +1334,27 @@ function drawGame() {
     gctx.fillText(b.sub, W / 2, H * 0.32 + 84);
   }
 
-  // Win screen
-  if (gameState.won && performance.now() - gameState.finishedAt > 2400) {
-    gctx.fillStyle = 'rgba(0,0,0,0.86)';
-    gctx.fillRect(0, 0, W, H);
+  // Win banner — top strip so celebration scene stays visible
+  if (gameState.won && performance.now() - gameState.finishedAt > 2700) {
+    gctx.fillStyle = 'rgba(0,0,0,0.72)';
+    gctx.fillRect(0, 0, W, 96);
     gctx.fillStyle = '#ff00aa';
-    gctx.font = 'bold 56px "Tahoma", sans-serif';
+    gctx.font = 'bold 38px "Tahoma", sans-serif';
     gctx.textAlign = 'center';
-    gctx.fillText('YOU MADE IT', W / 2, H / 2 - 12);
+    gctx.fillText('YOU MADE IT', W / 2, 46);
     gctx.fillStyle = '#fff';
-    gctx.font = 'bold 14px "Courier New", monospace';
-    gctx.fillText('1,065 KM IN 3 DAYS · THE BIKE IS PROUD', W / 2, H / 2 + 20);
+    gctx.font = 'bold 12px "Courier New", monospace';
+    gctx.fillText(gameState.winText, W / 2, 68);
     gctx.fillStyle = '#00ff66';
-    gctx.fillText('► CLICK TO RIDE AGAIN ◄', W / 2, H / 2 + 56);
+    gctx.font = 'bold 11px "Courier New", monospace';
+    gctx.fillText('► CLICK TO RIDE AGAIN ◄', W / 2, 86);
   }
 }
 
 gameCanvas.addEventListener('click', () => {
   gameCanvas.focus();
-  if (gameState && gameState.won && performance.now() - gameState.finishedAt > 2400) {
-    gameState = newGameState();
+  if (gameState && gameState.won && performance.now() - gameState.finishedAt > 2700) {
+    gameState = newGameState(gameState.route);
   }
 });
 

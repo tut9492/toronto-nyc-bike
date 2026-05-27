@@ -57,12 +57,12 @@ Two itineraries share the same Route 5 + Empire State Trail corridor — toggle 
 
 **Standard / Aggressive modes** — click the map to focus. `↑↓→` ride the bike around. `←` wheelies (silent). `ENTER` (or `▶ PLAY`) auto-rides along the route; `■ STOP` bails.
 
-**Excited Bike mode** — the map becomes a side-scrolling game. Bike auto-runs. `↓` to jump, `←` for a wheelie speed-boost. Three obstacle types:
+**Side-scroller game** — Aggressive and Excited routes both have a side-scrolling game. Click `▶ PLAY` on the map toolbar (Aggressive) or just select `🚲💨 EXCITED BIKE` (auto-launches). Bike auto-runs. `↓` to jump, `←` for a wheelie speed-boost. Three obstacle types:
 - 🟠 cones — jump or eat a 12 km setback (thunk)
 - ⚫ potholes — jump or eat a 25 km setback (thunk)
 - 🟫 ramps — roll over them grounded for an auto-launch boost (shift up)
 
-Four city checkpoints (Toronto → Rochester → Albany → NYC) trigger pink banners with day distances + a bell ding. Reach NYC for the win screen.
+Checkpoints per route — Aggressive has 5 city flags (Batavia → Syracuse → Amsterdam → Poughkeepsie → NYC); Excited has 3 (Rochester → Albany → NYC). Each crossing pops a pink banner with the day's distance + a bell ding. Reach NYC and the rider dismounts, pumps the bike overhead, and 5 friends slide in cheering.
 
 **Sounds** (Web Audio API, no audio files): doppler car whooshes pass every few seconds during a ride; gear-shift clicks fire occasionally on their own and on wheelies/ramps; bike-bell ding marks city crossings; low thunk on crash.
 
