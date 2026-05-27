@@ -52,6 +52,7 @@
     gap: 6px;
     padding: 6px;
     height: calc(100vh - 23px);
+    height: calc(100dvh - 23px);
   }
   .window {
     background: var(--gray);
@@ -382,7 +383,8 @@
   #touch-controls {
     display: none;
     position: fixed;
-    bottom: 14px; right: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    right: calc(14px + env(safe-area-inset-right, 0px));
     gap: 12px;
     z-index: 9998;
   }
@@ -547,9 +549,18 @@
     50% { transform: scale(1.06); }
   }
   @media (max-width: 800px) {
-    #app { grid-template-columns: 1fr; grid-template-rows: 40vh 1fr; height: calc(100vh - 23px); }
-    body.game-active #app { grid-template-rows: 0 1fr; }
+    #app {
+      grid-template-columns: 1fr;
+      grid-template-rows: 40vh 1fr;
+      height: calc(100vh - 23px);
+      height: calc(100dvh - 23px);
+    }
+    /* When the game is active on mobile, hide the sidebar AND collapse the
+       grid to one row so the map window fills the screen. Forces map window
+       into row 1 explicitly so it doesn't auto-place into a 0-height row. */
+    body.game-active #app { grid-template-rows: 1fr; }
     body.game-active #sidebar-window { display: none; }
+    body.game-active #map-window { grid-row: 1 / 2; }
     .touch-btn { width: 56px; height: 56px; font-size: 22px; }
     #touch-go { width: 72px; height: 72px; font-size: 30px; }
   }
@@ -631,8 +642,9 @@
       <span class="map-hint">↑↓→ ride · ← WHEELIE · ENTER auto · click map first</span>
     </div>
     <div id="map-body">
-      <div id="map" tabindex="0"></div>
-      <canvas id="game" tabindex="0"></canvas>
+      <div id="map" tabindex="0" role="application" aria-label="Route map. Click then use arrow keys to pan, plus and minus to zoom."></div>
+      <canvas id="game" tabindex="0" role="application"
+              aria-label="Bike racing game. Right arrow pedals, left arrow does a wheelie, down arrow jumps. Press the STOP button to exit."></canvas>
     </div>
   </div>
 
@@ -640,23 +652,26 @@
 
 <div id="wheelie-toast">🚲💨 WHEELIE!!!</div>
 
-<div id="touch-controls">
-  <button class="touch-btn" id="touch-wheelie">←</button>
-  <button class="touch-btn" id="touch-jump">↓</button>
-  <button class="touch-btn" id="touch-go">→</button>
+<div id="touch-controls" aria-hidden="true">
+  <button class="touch-btn" id="touch-wheelie" aria-label="Wheelie">←</button>
+  <button class="touch-btn" id="touch-jump" aria-label="Jump">↓</button>
+  <button class="touch-btn" id="touch-go" aria-label="Pedal (hold to accelerate)">→</button>
 </div>
 
-<div id="lb-popup">
+<div id="lb-popup" role="dialog" aria-modal="true" aria-labelledby="lb-your-time">
   <div class="window">
     <div class="titlebar">
       <div class="titlebar-title"><span class="titlebar-icon">🏆</span><span>LEADERBOARD.EXE</span></div>
-      <div class="win-controls"><button class="win-btn" id="lb-close">×</button></div>
+      <div class="win-controls"><button class="win-btn" id="lb-close" aria-label="Close leaderboard">×</button></div>
     </div>
     <div class="lb-body">
       <div id="lb-your-time">YOUR TIME: --</div>
       <div id="lb-your-route">—</div>
       <div id="lb-submit-wrap">
-        <input id="lb-name" maxlength="12" placeholder="YOUR NAME" autocomplete="off">
+        <input id="lb-name" maxlength="12" placeholder="YOUR NAME"
+               autocomplete="off" autocapitalize="characters"
+               autocorrect="off" spellcheck="false" inputmode="text"
+               aria-label="Your name (1-12 characters)">
         <button id="lb-submit">▶ SUBMIT TIME</button>
       </div>
       <div id="lb-status"></div>
@@ -669,14 +684,14 @@
   </div>
 </div>
 
-<div id="welcome-popup" class="show">
+<div id="welcome-popup" class="show" role="dialog" aria-modal="true" aria-labelledby="welcome-headline">
   <div class="window">
     <div class="titlebar">
       <div class="titlebar-title"><span class="titlebar-icon">🚴</span><span>BIKETRIP.EXE</span></div>
-      <div class="win-controls"><button class="win-btn" id="welcome-close">×</button></div>
+      <div class="win-controls"><button class="win-btn" id="welcome-close" aria-label="Close welcome">×</button></div>
     </div>
     <div class="welcome-body">
-      <div class="welcome-headline">RACE</div>
+      <div class="welcome-headline" id="welcome-headline">RACE</div>
       <div class="welcome-subhead">TORONTO → NYC</div>
       <p class="welcome-line">1,065 km · hills, hazards, ramps · best time wins</p>
       <div class="welcome-actions">
@@ -697,6 +712,16 @@ const ROUTE_LINE = [
   [-73.901,41.9409],[-73.9209,41.7004],[-73.984,41.5048],[-73.8934,41.29],
   [-73.8685,41.0534],[-73.8987,40.9312],[-74.006,40.7128]
 ];
+
+function makeCardActivatable(el, label, onActivate) {
+  el.setAttribute('role', 'button');
+  el.setAttribute('tabindex', '0');
+  el.setAttribute('aria-label', label);
+  el.onclick = onActivate;
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onActivate(); }
+  });
+}
 
 const WAYPOINTS = [
   { name: "Hamilton", lng: -79.7633, lat: 43.3832, desc: "Waterfront Trail through Burlington" },
@@ -878,7 +903,7 @@ function renderRoute(routeKey) {
         <div class="card-meta">► ${d.meta}</div>
         <p class="card-desc">${d.desc}</p>
       </div>`;
-    w.onclick = () => flyTo(`day-${i}`, d.lat, d.lng);
+    makeCardActivatable(w, `${d.name}. ${d.meta}`, () => flyTo(`day-${i}`, d.lat, d.lng));
     daysPanel.appendChild(w);
   });
 
@@ -907,7 +932,7 @@ function renderRoute(routeKey) {
         <div class="card-body">
           <p class="card-desc">${h.desc}</p>
         </div>`;
-      w.onclick = () => flyTo(`hotel-${h._i}`, h.lat, h.lng);
+      makeCardActivatable(w, `Hotel: ${h.name}, ${h.city}`, () => flyTo(`hotel-${h._i}`, h.lat, h.lng));
       hotelsPanel.appendChild(w);
     });
   });
@@ -930,10 +955,10 @@ WAYPOINTS.forEach((w, i) => {
     <div class="card-body">
       <p class="card-desc">${w.desc}</p>
     </div>`;
-  win.onclick = () => {
+  makeCardActivatable(win, `Waypoint: ${w.name}`, () => {
     map.flyTo([w.lat, w.lng], 11, { duration: 0.7 });
     setTimeout(() => waypointMarkers[i]?.openPopup(), 700);
-  };
+  });
   waypointsPanel.appendChild(win);
 });
 
@@ -2032,6 +2057,7 @@ let lbContext = { route: 'excited', time: 0, crashes: 0, submitted: false };
 
 async function showLeaderboard(route, finalTime, crashes) {
   lbContext = { route, time: finalTime, crashes, submitted: false };
+  lbOpener = document.activeElement;
 
   document.getElementById('lb-your-time').textContent = `YOUR TIME: ${fmtTime(finalTime)}`;
   document.getElementById('lb-your-route').textContent =
@@ -2047,6 +2073,7 @@ async function showLeaderboard(route, finalTime, crashes) {
   status.className = '';
 
   document.getElementById('lb-popup').classList.add('show');
+  setTimeout(() => nameInput.focus(), 0);
 
   // Render local fallback immediately while remote loads
   const local = getLocalLB(route);
@@ -2054,18 +2081,22 @@ async function showLeaderboard(route, finalTime, crashes) {
 
   // Try to fetch remote leaderboard
   const remote = await fetchRemoteLB(route);
+  // Always show the submit form so the user can save a name — locally
+  // if remote is down, or to both stores if it's up.
+  document.getElementById('lb-submit-wrap').style.display = '';
   if (remote) {
     renderLBEntries(remote, finalTime);
-    document.getElementById('lb-submit-wrap').style.display = '';
+    lbContext.remoteAvailable = true;
   } else {
-    document.getElementById('lb-submit-wrap').style.display = 'none';
-    status.textContent = 'shared leaderboard offline — local only';
+    lbContext.remoteAvailable = false;
+    status.textContent = 'shared leaderboard offline — saving locally only';
     status.className = 'error';
   }
 }
 
 function hideLeaderboard() {
   document.getElementById('lb-popup').classList.remove('show');
+  if (lbOpener && document.body.contains(lbOpener)) lbOpener.focus();
 }
 
 document.getElementById('lb-close').onclick = hideLeaderboard;
@@ -2089,14 +2120,25 @@ document.getElementById('lb-submit').onclick = async () => {
     return;
   }
   localStorage.setItem('bike_player_name', name);
-  saveLocalLB(lbContext.route, name, lbContext.time, lbContext.crashes);
+  // Always save locally first — guaranteed even if remote is offline.
+  const localLb = saveLocalLB(lbContext.route, name, lbContext.time, lbContext.crashes);
 
   const btn = document.getElementById('lb-submit');
-  btn.disabled = true;
-  btn.textContent = 'SUBMITTING...';
   status.textContent = '';
   status.className = '';
 
+  // If remote isn't available, just save locally and we're done.
+  if (!lbContext.remoteAvailable) {
+    lbContext.submitted = true;
+    document.getElementById('lb-submit-wrap').style.display = 'none';
+    status.textContent = '✓ saved locally';
+    status.className = 'ok';
+    renderLBEntries(localLb.slice(0, 5), lbContext.time);
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'SUBMITTING...';
   const result = await submitRemoteLB(lbContext.route, name, lbContext.time, lbContext.crashes);
   if (result.ok) {
     lbContext.submitted = true;
@@ -2111,6 +2153,13 @@ document.getElementById('lb-submit').onclick = async () => {
     status.className = 'error';
   }
 };
+
+// Scroll the input into view when keyboard opens on mobile
+document.getElementById('lb-name').addEventListener('focus', () => {
+  setTimeout(() => {
+    document.getElementById('lb-name').scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, 300);
+});
 
 // Submit on Enter
 document.getElementById('lb-name').addEventListener('keydown', (e) => {
@@ -2143,8 +2192,31 @@ bindTap('touch-jump', () => { if (gameRunning) jumpBike(); });
 bindTap('touch-wheelie', () => { if (gameRunning) gameWheelie(); });
 
 // ===== WELCOME POPUP =====
+// Track which element opened a dialog so focus returns there on close.
+let welcomeOpener = null;
+let lbOpener = null;
+
+function focusablesIn(root) {
+  return Array.from(root.querySelectorAll(
+    'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )).filter(el => el.offsetParent !== null);
+}
+
+function trapTab(e, popup) {
+  if (e.key !== 'Tab') return;
+  const f = focusablesIn(popup);
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+
 function hideWelcome() {
   document.getElementById('welcome-popup').classList.remove('show');
+  // Welcome only appears on initial load; send keyboard users somewhere useful.
+  const fallback = document.getElementById('sidebar-play') || document.querySelector('.tab-btn');
+  if (welcomeOpener && document.body.contains(welcomeOpener)) welcomeOpener.focus();
+  else if (fallback) fallback.focus();
 }
 document.getElementById('welcome-close').onclick = hideWelcome;
 document.getElementById('welcome-plan').onclick = hideWelcome;
@@ -2153,6 +2225,29 @@ document.getElementById('welcome-play').onclick = () => {
   stopAutoRide();
   startGame('aggressive');
 };
+
+// On initial load, focus the primary action so keyboard users land somewhere useful.
+setTimeout(() => {
+  const welcome = document.getElementById('welcome-popup');
+  if (welcome.classList.contains('show')) document.getElementById('welcome-play').focus();
+}, 0);
+
+// ESC closes whichever dialog is open; Tab is trapped inside the open dialog.
+document.addEventListener('keydown', (e) => {
+  const lb = document.getElementById('lb-popup');
+  const welcome = document.getElementById('welcome-popup');
+  const openPopup = lb.classList.contains('show') ? lb
+                   : welcome.classList.contains('show') ? welcome
+                   : null;
+  if (!openPopup) return;
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    if (openPopup === lb) { hideLeaderboard(); if (lbOpener && document.body.contains(lbOpener)) lbOpener.focus(); }
+    else hideWelcome();
+  } else {
+    trapTab(e, openPopup);
+  }
+});
 
 gameCanvas.addEventListener('keydown', (e) => {
   if (!gameRunning) return;
