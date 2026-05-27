@@ -1271,35 +1271,41 @@ function newGameState(route = 'excited') {
     lbShown: false,
     cities,
     obstacles: (() => {
-      const obs = []; let k = 60;
+      const obs = []; let k = 80;
+      const MIN_HAZARD_GAP = 50; // km — no two cones/potholes within this distance
+      const isHazard = (t) => t === 'cone' || t === 'pothole';
       const farFromCity = (km) => !cityKms.some(ck => Math.abs(ck - km) < 30);
+      const farFromHazards = (km) => obs.every(o => !isHazard(o.type) || Math.abs(o.km - km) >= MIN_HAZARD_GAP);
+
       while (k < 1040) {
         if (farFromCity(k)) {
-          // Progress 0..1: difficulty ramps up. Ramps less common, potholes more
-          // common, density tighter the further you go.
           const progress = k / 1065;
           const r = Math.random();
           let type;
-          if (r < 0.38 - progress * 0.26) type = 'ramp';        // 38% → 12%
-          else if (r < 0.66 - progress * 0.06) type = 'cone';   // ~28% → ~22%
-          else type = 'pothole';                                 // ~34% → ~66%
+          if (r < 0.50 - progress * 0.20) type = 'ramp';        // 50% → 30%
+          else if (r < 0.78 - progress * 0.05) type = 'cone';   // ~28% → ~25%
+          else type = 'pothole';                                 // ~22% → ~45%
+
+          // If it would be a hazard too close to another hazard, fall back to a ramp
+          if (isHazard(type) && !farFromHazards(k)) type = 'ramp';
           obs.push({ km: k, type, hit: false });
 
-          // After a ramp, plant a hazard in the landing zone (≈30-45 km later)
-          if (type === 'ramp' && Math.random() < 0.85) {
-            const landKm = k + 30 + Math.random() * 15;
-            if (landKm < 1040 && farFromCity(landKm)) {
+          // After ramps, occasionally plant a landing-zone hazard — only if it
+          // respects the min-gap from other hazards
+          if (type === 'ramp' && Math.random() < 0.5) {
+            const landKm = k + 42 + Math.random() * 14; // 42-56 km later (> MIN gap)
+            if (landKm < 1040 && farFromCity(landKm) && farFromHazards(landKm)) {
               obs.push({
                 km: landKm,
-                type: Math.random() < 0.6 ? 'pothole' : 'cone',
+                type: Math.random() < 0.5 ? 'pothole' : 'cone',
                 hit: false
               });
             }
           }
         }
-        // Spacing tightens with progress: ~28-78 km early, ~15-40 km late
+        // Spacing: wider throughout. ~55-150 km early → ~45-95 km late.
         const progress = k / 1065;
-        k += (28 - progress * 13) + Math.random() * (50 - progress * 25);
+        k += (55 - progress * 10) + Math.random() * (95 - progress * 45);
       }
       return obs;
     })(),
@@ -1346,19 +1352,21 @@ function jumpBike() {
   if (!gameState || gameState.bikeAir > 0.01 || gameState.won) return;
   gameState.bikeVY = 4.2;
   clickShift(1.6, 0.08);
-  // Spawn a landing-zone hazard with progress-based probability.
-  // Early game: 25%, late game: 80%. Only if the area is clear.
+  // Occasionally drop a landing hazard ahead. Modest probability and only
+  // if the area is well clear of other hazards (≥50 km gap).
   const progress = gameState.km / 1065;
-  const spawnChance = 0.25 + progress * 0.55;
+  const spawnChance = 0.10 + progress * 0.20; // 10% → 30%
   if (Math.random() < spawnChance) {
-    const landKm = gameState.km + 22 + Math.random() * 14; // 22-36 km ahead
+    const landKm = gameState.km + 38 + Math.random() * 16; // 38-54 km ahead
     if (landKm < 1055) {
-      const conflict = gameState.obstacles.some(o => !o.hit && Math.abs(o.km - landKm) < 14);
+      const hazardConflict = gameState.obstacles.some(o =>
+        (o.type === 'cone' || o.type === 'pothole') && Math.abs(o.km - landKm) < 50
+      );
       const nearCity = gameState.cities.some(c => Math.abs(c.km - landKm) < 30);
-      if (!conflict && !nearCity) {
+      if (!hazardConflict && !nearCity) {
         gameState.obstacles.push({
           km: landKm,
-          type: Math.random() < 0.55 ? 'pothole' : 'cone',
+          type: Math.random() < 0.5 ? 'pothole' : 'cone',
           hit: false
         });
       }
