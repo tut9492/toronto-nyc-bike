@@ -3,77 +3,319 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Toronto → NYC Bike Trip</title>
+<title>BikeTrip.exe — C:\TRIP\TORONTO_NYC</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <style>
   :root {
-    --bg: #faf8f5;
-    --panel: #fff;
-    --ink: #1a1a1a;
-    --muted: #666;
-    --line: #e5e0d8;
-    --accent: #e64414;
+    --gray: #c0c0c0;
+    --gray-2: #d4d0c8;
+    --gray-dark: #808080;
+    --gray-darker: #404040;
+    --light: #ffffff;
+    --ink: #000000;
+    --title-from: #000080;
+    --title-to: #1084d0;
+    --title-inactive: #7b7b7b;
+    --accent: #ff4d00;
     --accent-soft: #fff1ec;
+    --link: #0000ee;
+    --teal: #008080;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--ink); }
-  #app { display: grid; grid-template-columns: 380px 1fr; height: 100vh; }
-  #sidebar { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; }
-  #map { height: 100vh; }
-  .header { padding: 24px 24px 16px; border-bottom: 1px solid var(--line); }
-  .title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 6px; }
-  .subtitle { font-size: 13px; color: var(--muted); margin: 0 0 14px; }
-  .route-toggle { display: flex; gap: 4px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
-  .route-btn { flex: 1; padding: 8px 10px; background: none; border: none; border-radius: 5px; font: inherit; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; }
-  .route-btn.active { background: var(--accent); color: #fff; }
-  .summary { display: flex; gap: 16px; padding: 16px 24px; background: var(--accent-soft); border-bottom: 1px solid var(--line); }
-  .stat { flex: 1; }
-  .stat-value { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1; }
-  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-top: 4px; }
-  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); z-index: 10; }
-  .tab { flex: 1; padding: 12px 8px; background: none; border: none; border-bottom: 2px solid transparent; font: inherit; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); cursor: pointer; }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .panel { padding: 16px 20px 32px; display: none; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: "Tahoma", "MS Sans Serif", "Geneva", sans-serif;
+    font-size: 12px;
+    color: var(--ink);
+    background: var(--teal);
+    background-image:
+      radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+      radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: 4px 4px, 4px 4px;
+    background-position: 0 0, 2px 2px;
+    overflow: hidden;
+  }
+  .marquee-bar {
+    background: #000;
+    color: #00ff66;
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    padding: 4px 0;
+    border-bottom: 1px solid #00aa44;
+    letter-spacing: 0.08em;
+  }
+  .marquee-bar marquee { font-weight: 700; }
+  #app {
+    display: grid;
+    grid-template-columns: 440px 1fr;
+    gap: 6px;
+    padding: 6px;
+    height: calc(100vh - 23px);
+  }
+  .window {
+    background: var(--gray);
+    border-top: 2px solid var(--light);
+    border-left: 2px solid var(--light);
+    border-right: 2px solid var(--gray-darker);
+    border-bottom: 2px solid var(--gray-darker);
+    box-shadow: 1px 1px 0 var(--ink);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .titlebar {
+    background: linear-gradient(90deg, var(--title-from), var(--title-to));
+    color: var(--light);
+    font-weight: 700;
+    padding: 3px 4px 3px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    user-select: none;
+  }
+  .titlebar-title { display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .titlebar-icon { display: inline-block; width: 14px; height: 14px; background: var(--gray); color: var(--ink); text-align: center; line-height: 12px; font-size: 10px; border: 1px solid var(--ink); }
+  .win-controls { display: flex; gap: 2px; flex-shrink: 0; }
+  .win-btn {
+    width: 17px; height: 15px;
+    background: var(--gray);
+    border-top: 1px solid var(--light);
+    border-left: 1px solid var(--light);
+    border-right: 1px solid var(--gray-darker);
+    border-bottom: 1px solid var(--gray-darker);
+    color: var(--ink);
+    font-family: monospace; font-size: 10px; font-weight: 700;
+    padding: 0; margin: 0; line-height: 1; cursor: pointer;
+  }
+  .win-btn:active { border-color: var(--gray-darker) var(--light) var(--light) var(--gray-darker); }
+  .window-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .menubar { display: flex; gap: 0; padding: 2px 4px; border-bottom: 1px solid var(--gray-darker); background: var(--gray); font-size: 11px; }
+  .menubar span { padding: 2px 8px; cursor: default; }
+  .menubar span:hover { background: var(--title-from); color: var(--light); }
+  .menubar u { text-decoration: underline; }
+  .scroll-area { flex: 1; overflow-y: auto; padding: 8px; background: var(--gray); }
+  .fieldset {
+    border-top: 1px solid var(--gray-dark);
+    border-left: 1px solid var(--gray-dark);
+    border-right: 1px solid var(--light);
+    border-bottom: 1px solid var(--light);
+    padding: 12px 10px 10px;
+    position: relative;
+    margin: 0 0 10px;
+  }
+  .fieldset-legend {
+    position: absolute;
+    top: -7px; left: 8px;
+    background: var(--gray);
+    padding: 0 4px;
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .radio-row { display: flex; flex-direction: column; gap: 4px; }
+  .radio-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 2px 4px; }
+  .radio-row label:hover { background: var(--title-from); color: var(--light); }
+  .radio-row input { margin: 0; }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .stat-tile {
+    background: var(--light);
+    border-top: 1px solid var(--gray-darker);
+    border-left: 1px solid var(--gray-darker);
+    border-right: 1px solid var(--light);
+    border-bottom: 1px solid var(--light);
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .stat-value { font-family: "Courier New", monospace; font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .stat-label { font-size: 10px; text-transform: uppercase; color: var(--gray-darker); margin-top: 4px; }
+  .tabs {
+    display: flex;
+    gap: 2px;
+    padding: 6px 8px 0;
+    background: var(--gray);
+    border-bottom: 1px solid var(--gray-darker);
+    margin: 0;
+  }
+  .tab-btn {
+    background: var(--gray);
+    border-top: 1px solid var(--light);
+    border-left: 1px solid var(--light);
+    border-right: 1px solid var(--gray-darker);
+    border-bottom: 0;
+    padding: 4px 14px 6px;
+    font: inherit; font-size: 11px; font-weight: 400;
+    cursor: pointer;
+    color: var(--ink);
+    position: relative;
+    top: 1px;
+  }
+  .tab-btn.active {
+    padding-top: 5px;
+    padding-bottom: 7px;
+    background: var(--gray);
+    z-index: 2;
+    border-bottom: 1px solid var(--gray);
+    font-weight: 700;
+  }
+  .panel { display: none; padding: 10px; flex: 1; overflow-y: auto; background: var(--gray); }
   .panel.active { display: block; }
-  .card { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.15s; }
-  .card:hover { border-color: var(--accent); background: var(--accent-soft); }
-  .card-title { font-size: 14px; font-weight: 600; margin: 0 0 4px; line-height: 1.3; }
-  .card-meta { font-size: 11px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
-  .card-desc { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; }
-  .group-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 16px 0 8px; padding-left: 2px; }
-  .group-label:first-child { margin-top: 4px; }
-  .leaflet-popup-content { font-family: inherit; font-size: 13px; }
-  .leaflet-popup-content strong { display: block; margin-bottom: 4px; }
-  @media (max-width: 768px) {
-    #app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-    #sidebar { max-height: 55vh; border-right: none; border-bottom: 1px solid var(--line); }
-    #map { height: 45vh; }
+  .day-window, .hotel-window, .waypoint-window {
+    background: var(--gray);
+    border-top: 2px solid var(--light);
+    border-left: 2px solid var(--light);
+    border-right: 2px solid var(--gray-darker);
+    border-bottom: 2px solid var(--gray-darker);
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: transform 0.08s;
+  }
+  .day-window:hover, .hotel-window:hover, .waypoint-window:hover { transform: translate(-1px, -1px); box-shadow: 2px 2px 0 var(--ink); }
+  .day-window:active, .hotel-window:active, .waypoint-window:active { transform: translate(0, 0); box-shadow: none; }
+  .card-tb {
+    background: linear-gradient(90deg, var(--title-from), var(--title-to));
+    color: var(--light);
+    font-weight: 700;
+    padding: 2px 6px;
+    font-size: 11px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .day-window.rest .card-tb { background: linear-gradient(90deg, #5b2c83, #b34cff); }
+  .hotel-window .card-tb { background: linear-gradient(90deg, #006400, #44aa44); }
+  .waypoint-window .card-tb { background: linear-gradient(90deg, var(--title-inactive), #a0a0a0); }
+  .card-body { padding: 8px 10px; background: var(--gray); }
+  .card-meta { font-family: "Courier New", monospace; font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+  .card-title { font-size: 13px; font-weight: 700; margin: 0 0 6px; }
+  .card-desc { font-size: 11px; line-height: 1.5; margin: 0; color: var(--ink); }
+  .group-divider {
+    text-align: center;
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    color: var(--gray-darker);
+    margin: 12px 0 6px;
+  }
+  .group-divider::before, .group-divider::after { content: "═══ "; }
+  .group-divider::after { content: " ═══"; }
+  .statusbar {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    background: var(--gray);
+    border-top: 1px solid var(--gray-darker);
+  }
+  .statusbar-cell {
+    flex: 1;
+    background: var(--gray);
+    border-top: 1px solid var(--gray-dark);
+    border-left: 1px solid var(--gray-dark);
+    border-right: 1px solid var(--light);
+    border-bottom: 1px solid var(--light);
+    padding: 2px 6px;
+    font-size: 10px;
+    font-family: "Courier New", monospace;
+    color: var(--ink);
+  }
+  .statusbar-cell.right { text-align: right; flex: 0 0 auto; }
+  #map-window { display: flex; flex-direction: column; }
+  #map-body { flex: 1; padding: 2px; background: var(--gray); }
+  #map { width: 100%; height: 100%; border-top: 2px solid var(--gray-darker); border-left: 2px solid var(--gray-darker); border-right: 2px solid var(--light); border-bottom: 2px solid var(--light); }
+  .leaflet-popup-content-wrapper { border-radius: 0 !important; box-shadow: 2px 2px 0 var(--ink) !important; border: 1px solid var(--ink) !important; background: var(--gray) !important; padding: 0 !important; }
+  .leaflet-popup-content { margin: 0 !important; font-family: "Tahoma", sans-serif; font-size: 11px; }
+  .leaflet-popup-content .pop-tb { background: linear-gradient(90deg, var(--title-from), var(--title-to)); color: var(--light); font-weight: 700; padding: 2px 6px; font-size: 11px; }
+  .leaflet-popup-content .pop-body { padding: 8px 10px; }
+  .leaflet-popup-tip { background: var(--gray) !important; box-shadow: none !important; border: 1px solid var(--ink) !important; }
+  .leaflet-container a.leaflet-popup-close-button { color: var(--light) !important; padding: 2px 6px 0 !important; font-weight: 700; }
+  .weird-stamp {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--light);
+    font-family: "Courier New", monospace;
+    font-size: 10px;
+    padding: 1px 4px;
+    font-weight: 700;
+    transform: rotate(-3deg);
+    margin-left: 4px;
+  }
+  @media (max-width: 800px) {
+    #app { grid-template-columns: 1fr; grid-template-rows: 60vh 1fr; height: calc(100vh - 23px); }
   }
 </style>
 </head>
 <body>
+
+<div class="marquee-bar">
+  <marquee scrollamount="5">★ ★ ★ WELCOME TO BIKETRIP.EXE v1.0 ★ ★ ★ THE WEB'S #1 TORONTO → NYC ROUTE PLANNER ★ ★ ★ BEST VIEWED IN NETSCAPE NAVIGATOR @ 1024×768 ★ ★ ★ KEEP PEDALING ★ ★ ★</marquee>
+</div>
+
 <div id="app">
-  <aside id="sidebar">
-    <div class="header">
-      <h1 class="title">Toronto → NYC</h1>
-      <p class="subtitle">Via Route 5 + Empire State Trail</p>
-      <div class="route-toggle">
-        <button class="route-btn active" data-route="standard">Standard · 7 + rest</button>
-        <button class="route-btn" data-route="aggressive">Aggressive · 5 + rest</button>
+
+  <!-- SIDEBAR WINDOW -->
+  <div class="window" id="sidebar-window">
+    <div class="titlebar">
+      <div class="titlebar-title">
+        <span class="titlebar-icon">🚲</span>
+        <span>Trip Planner — C:\TRIP\itinerary.exe</span>
+      </div>
+      <div class="win-controls">
+        <button class="win-btn" title="Minimize">_</button>
+        <button class="win-btn" title="Maximize">□</button>
+        <button class="win-btn" title="Close">×</button>
       </div>
     </div>
-    <div class="summary" id="summary"></div>
+    <div class="menubar">
+      <span><u>F</u>ile</span><span><u>E</u>dit</span><span><u>V</u>iew</span><span><u>R</u>ide</span><span><u>H</u>elp</span>
+    </div>
+    <div class="scroll-area">
+
+      <div class="fieldset">
+        <div class="fieldset-legend">Route Selection</div>
+        <div class="radio-row">
+          <label><input type="radio" name="route" value="standard" checked> Standard &mdash; 7 days + rest</label>
+          <label><input type="radio" name="route" value="aggressive"> Aggressive &mdash; 5 days + rest <span class="weird-stamp">200KM+</span></label>
+        </div>
+      </div>
+
+      <div class="fieldset">
+        <div class="fieldset-legend">Trip Stats</div>
+        <div class="stats-row" id="summary"></div>
+      </div>
+
+    </div>
+
     <div class="tabs">
-      <button class="tab active" data-tab="days">Days</button>
-      <button class="tab" data-tab="hotels">Hotels</button>
-      <button class="tab" data-tab="waypoints">Waypoints</button>
+      <button class="tab-btn active" data-tab="days">▣ Days</button>
+      <button class="tab-btn" data-tab="hotels">☰ Hotels</button>
+      <button class="tab-btn" data-tab="waypoints">◆ Waypoints</button>
     </div>
     <div id="panel-days" class="panel active"></div>
     <div id="panel-hotels" class="panel"></div>
     <div id="panel-waypoints" class="panel"></div>
-  </aside>
-  <div id="map"></div>
+
+    <div class="statusbar">
+      <div class="statusbar-cell">READY</div>
+      <div class="statusbar-cell" id="status-route">Route: standard</div>
+      <div class="statusbar-cell right">1,065 KB loaded</div>
+    </div>
+  </div>
+
+  <!-- MAP WINDOW -->
+  <div class="window" id="map-window">
+    <div class="titlebar">
+      <div class="titlebar-title">
+        <span class="titlebar-icon">🗺</span>
+        <span>MAP.EXE — C:\TRIP\route.kml</span>
+      </div>
+      <div class="win-controls">
+        <button class="win-btn" title="Minimize">_</button>
+        <button class="win-btn" title="Maximize">□</button>
+        <button class="win-btn" title="Close">×</button>
+      </div>
+    </div>
+    <div id="map-body"><div id="map"></div></div>
+  </div>
+
 </div>
 
 <script>
@@ -105,7 +347,7 @@ const WAYPOINTS = [
 const ITINERARIES = {
   standard: {
     stats: [
-      { value: "~1,065", label: "km total" },
+      { value: "1065", label: "km total" },
       { value: "7", label: "riding days" },
       { value: "+1", label: "rest day" }
     ],
@@ -115,7 +357,7 @@ const ITINERARIES = {
       { name: "DAY 1 — Buffalo", lng: -78.8784, lat: 42.8864, meta: "~160 km", desc: "Via Waterfront Trail, Hamilton, St. Catharines, Peace Bridge. Stay in Theatre District / Allentown — safe, well-lit. AVOID East Side east of Main St." },
       { name: "DAY 2 — Rochester", lng: -77.6088, lat: 43.1566, meta: "~175 km", desc: "Route 5 west through Batavia. Stay near East Main St / Convention Center area. AVOID north of Main St residential areas." },
       { name: "DAY 3 — Syracuse", lng: -76.1474, lat: 43.0481, meta: "~165 km", desc: "Route 5 through Finger Lakes north. Stay in Armory Square — best district in town. AVOID west side past Geddes St, south side." },
-      { name: "DAY 4+5 — Utica / REST", lng: -75.2327, lat: 43.1009, meta: "~100 km + rest day", desc: "Shorter ride, then rest day. Stay on Genesee Street (north section). AVOID south of Oriskany St, west side residential." },
+      { name: "DAY 4+5 — Utica / REST", lng: -75.2327, lat: 43.1009, meta: "~100 km + rest day", desc: "Shorter ride, then rest day. Stay on Genesee Street (north section). AVOID south of Oriskany St, west side residential.", rest: true },
       { name: "DAY 6 — Albany", lng: -73.7562, lat: 42.6526, meta: "~175 km", desc: "Mohawk Valley, some rolling hills. Stay in government district near Capitol. AVOID Arbor Hill (north of Clinton Ave), South End." },
       { name: "DAY 7 — Poughkeepsie", lng: -73.9209, lat: 41.7004, meta: "~160 km", desc: "Empire State Trail south, Hudson Valley. Stay near Civic Center / waterfront or go suburban on Route 9. AVOID Main St / Market St corridor, south side neighborhoods." },
       { name: "FINISH — New York City", lng: -74.006, lat: 40.7128, meta: "~130 km", desc: "Hudson River Greenway into Manhattan. Battery Park. You made it." }
@@ -139,7 +381,7 @@ const ITINERARIES = {
   },
   aggressive: {
     stats: [
-      { value: "~1,065", label: "km total" },
+      { value: "1065", label: "km total" },
       { value: "5", label: "riding days" },
       { value: "+1", label: "rest day" }
     ],
@@ -147,7 +389,7 @@ const ITINERARIES = {
       { name: "START — Toronto", lng: -79.3832, lat: 43.6532, meta: "Departure", desc: "Long days ahead. Pre-stage everything the night before. Dawn departure." },
       { name: "DAY 1 — Batavia, NY", lng: -78.1876, lat: 43.002, meta: "~230 km", desc: "Toronto → Hamilton → St. Catharines → Peace Bridge → Buffalo → Batavia via Route 5. Border crossing eats 30-60 min; cross at dawn. Refuel in Buffalo before pushing east." },
       { name: "DAY 2 — Syracuse", lng: -76.1474, lat: 43.0481, meta: "~275 km (longest)", desc: "Heaviest day. Route 5 through Rochester (lunch refuel), Geneva, north of Finger Lakes. Start at first light. Stay Armory Square — safest district." },
-      { name: "DAY 3 — REST in Syracuse", lng: -76.1474, lat: 43.0481, meta: "0 km · recovery", desc: "Earned. Sleep in, eat big, walk Armory Square. Bike shop within 1km if anything needs attention before the second half." },
+      { name: "DAY 3 — REST in Syracuse", lng: -76.1474, lat: 43.0481, meta: "0 km · recovery", desc: "Earned. Sleep in, eat big, walk Armory Square. Bike shop within 1km if anything needs attention before the second half.", rest: true },
       { name: "DAY 4 — Amsterdam, NY", lng: -74.1882, lat: 42.9384, meta: "~225 km", desc: "Through Utica, into Mohawk Valley. Rolling hills begin. Amsterdam has limited downtown lodging — book ahead or push +30km to Schenectady for more options." },
       { name: "DAY 5 — Poughkeepsie", lng: -73.9209, lat: 41.7004, meta: "~215 km", desc: "Schenectady → Albany → onto Empire State Trail south through Hudson Valley. Cross Walkway Over the Hudson on arrival." },
       { name: "FINISH — New York City", lng: -74.006, lat: 40.7128, meta: "~130 km (arrival)", desc: "Shorter final day by design — arrive fresh, avoid Manhattan rush hour. Hudson River Greenway into Battery Park." }
@@ -166,146 +408,169 @@ const ITINERARIES = {
 const map = L.map('map', { zoomControl: true }).setView([42.3, -76.5], 7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
-  attribution: '&copy; OpenStreetMap contributors'
+  attribution: '&copy; OpenStreetMap'
 }).addTo(map);
 
 const routeLine = L.polyline(ROUTE_LINE.map(([lng, lat]) => [lat, lng]), {
-  color: '#e64414', weight: 4, opacity: 0.9
+  color: '#ff4d00', weight: 5, opacity: 0.95
 }).addTo(map);
 map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
 
-function makeIcon(color, size = 12) {
+function pixelIcon(color, size = 14) {
+  const inner = size - 4;
   return L.divIcon({
     className: '',
-    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>`,
+    html: `<div style="width:${size}px;height:${size}px;background:${color};border:2px solid #000;box-shadow:1px 1px 0 #000;display:flex;align-items:center;justify-content:center"><div style="width:${inner-4}px;height:${inner-4}px;background:#fff"></div></div>`,
     iconSize: [size, size],
     iconAnchor: [size/2, size/2]
   });
 }
-const dayIcon = makeIcon('#e64414', 14);
-const hotelIcon = makeIcon('#2563eb', 10);
-const waypointIcon = makeIcon('#6b7280', 8);
+const dayIcon = pixelIcon('#ff4d00', 14);
+const restIcon = pixelIcon('#9333ea', 14);
+const hotelIcon = pixelIcon('#008000', 12);
+const waypointIcon = pixelIcon('#666', 10);
 
-// Waypoints don't change between itineraries — render once
-const waypointMarkers = WAYPOINTS.map((w, i) =>
+function popupHtml(title, body) {
+  return `<div class="pop-tb">${title}</div><div class="pop-body">${body}</div>`;
+}
+
+const waypointMarkers = WAYPOINTS.map((w) =>
   L.marker([w.lat, w.lng], { icon: waypointIcon })
-    .bindPopup(`<strong>${w.name}</strong>${w.desc}`)
+    .bindPopup(popupHtml(w.name, w.desc))
     .addTo(map)
 );
 
-// Day + hotel markers get swapped on route change
 let dayMarkers = [];
 let hotelMarkers = [];
 let activeMarkers = {};
 
-function clearLayerGroup(arr) { arr.forEach(m => map.removeLayer(m)); arr.length = 0; }
+function clear(arr) { arr.forEach(m => map.removeLayer(m)); arr.length = 0; }
 
 function renderRoute(routeKey) {
   const itin = ITINERARIES[routeKey];
+  document.getElementById('status-route').textContent = `Route: ${routeKey}`;
 
-  // Stats
   const sumEl = document.getElementById('summary');
   sumEl.innerHTML = itin.stats.map(s =>
-    `<div class="stat"><div class="stat-value">${s.value}</div><div class="stat-label">${s.label}</div></div>`
+    `<div class="stat-tile"><div class="stat-value">${s.value}</div><div class="stat-label">${s.label}</div></div>`
   ).join('');
 
-  // Clear old markers
-  clearLayerGroup(dayMarkers);
-  clearLayerGroup(hotelMarkers);
+  clear(dayMarkers);
+  clear(hotelMarkers);
   activeMarkers = {};
 
-  // Day markers
   itin.days.forEach((d, i) => {
-    const m = L.marker([d.lat, d.lng], { icon: dayIcon })
-      .bindPopup(`<strong>${d.name}</strong>${d.meta}<br><br>${d.desc}`)
+    const icon = d.rest ? restIcon : dayIcon;
+    const m = L.marker([d.lat, d.lng], { icon })
+      .bindPopup(popupHtml(d.name, `<strong>${d.meta}</strong><br>${d.desc}`))
       .addTo(map);
     dayMarkers.push(m);
     activeMarkers[`day-${i}`] = m;
   });
 
-  // Hotel markers
   itin.hotels.forEach((h, i) => {
     const m = L.marker([h.lat, h.lng], { icon: hotelIcon })
-      .bindPopup(`<strong>🏨 ${h.name}</strong>${h.day} · ${h.city}<br><br>${h.desc}`)
+      .bindPopup(popupHtml(`🏨 ${h.name}`, `<strong>${h.day} · ${h.city}</strong><br>${h.desc}`))
       .addTo(map);
     hotelMarkers.push(m);
     activeMarkers[`hotel-${i}`] = m;
   });
 
-  // Days panel
   const daysPanel = document.getElementById('panel-days');
   daysPanel.innerHTML = '';
   itin.days.forEach((d, i) => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `<div class="card-meta">${d.meta}</div><div class="card-title">${d.name}</div><p class="card-desc">${d.desc}</p>`;
-    card.onclick = () => flyTo(`day-${i}`, d.lat, d.lng);
-    daysPanel.appendChild(card);
+    const w = document.createElement('div');
+    w.className = 'day-window' + (d.rest ? ' rest' : '');
+    w.innerHTML = `
+      <div class="card-tb">
+        <span>${d.name}</span>
+        <span>[?]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">► ${d.meta}</div>
+        <p class="card-desc">${d.desc}</p>
+      </div>`;
+    w.onclick = () => flyTo(`day-${i}`, d.lat, d.lng);
+    daysPanel.appendChild(w);
   });
 
-  // Hotels panel (grouped by city, preserving day order)
   const hotelsPanel = document.getElementById('panel-hotels');
   hotelsPanel.innerHTML = '';
-  const seenCities = [];
-  const hotelsByCity = {};
+  const seen = [];
+  const byCity = {};
   itin.hotels.forEach((h, i) => {
-    if (!hotelsByCity[h.city]) { hotelsByCity[h.city] = []; seenCities.push(h.city); }
-    hotelsByCity[h.city].push({ ...h, _i: i });
+    if (!byCity[h.city]) { byCity[h.city] = []; seen.push(h.city); }
+    byCity[h.city].push({ ...h, _i: i });
   });
-  seenCities.forEach(city => {
-    const list = hotelsByCity[city];
-    const label = document.createElement('div');
-    label.className = 'group-label';
-    label.textContent = `${list[0].day} · ${city}`;
-    hotelsPanel.appendChild(label);
+  seen.forEach(city => {
+    const list = byCity[city];
+    const div = document.createElement('div');
+    div.className = 'group-divider';
+    div.textContent = `${list[0].day} · ${city}`;
+    hotelsPanel.appendChild(div);
     list.forEach(h => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `<div class="card-title">🏨 ${h.name}</div><p class="card-desc">${h.desc}</p>`;
-      card.onclick = () => flyTo(`hotel-${h._i}`, h.lat, h.lng);
-      hotelsPanel.appendChild(card);
+      const w = document.createElement('div');
+      w.className = 'hotel-window';
+      w.innerHTML = `
+        <div class="card-tb">
+          <span>🏨 ${h.name}</span>
+          <span>[?]</span>
+        </div>
+        <div class="card-body">
+          <p class="card-desc">${h.desc}</p>
+        </div>`;
+      w.onclick = () => flyTo(`hotel-${h._i}`, h.lat, h.lng);
+      hotelsPanel.appendChild(w);
     });
   });
 }
 
 function flyTo(key, lat, lng) {
-  map.flyTo([lat, lng], 11, { duration: 0.8 });
-  setTimeout(() => activeMarkers[key]?.openPopup(), 800);
+  map.flyTo([lat, lng], 11, { duration: 0.7 });
+  setTimeout(() => activeMarkers[key]?.openPopup(), 700);
 }
 
-// Waypoints panel (shared, render once)
 const waypointsPanel = document.getElementById('panel-waypoints');
 WAYPOINTS.forEach((w, i) => {
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.innerHTML = `<div class="card-title">${w.name}</div><p class="card-desc">${w.desc}</p>`;
-  card.onclick = () => {
-    map.flyTo([w.lat, w.lng], 11, { duration: 0.8 });
-    setTimeout(() => waypointMarkers[i]?.openPopup(), 800);
+  const win = document.createElement('div');
+  win.className = 'waypoint-window';
+  win.innerHTML = `
+    <div class="card-tb">
+      <span>◆ ${w.name}</span>
+      <span>[?]</span>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">${w.desc}</p>
+    </div>`;
+  win.onclick = () => {
+    map.flyTo([w.lat, w.lng], 11, { duration: 0.7 });
+    setTimeout(() => waypointMarkers[i]?.openPopup(), 700);
   };
-  waypointsPanel.appendChild(card);
+  waypointsPanel.appendChild(win);
 });
 
-// Tab switching
-document.querySelectorAll('.tab').forEach(tab => {
+document.querySelectorAll('.tab-btn').forEach(tab => {
   tab.onclick = () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
   };
 });
 
-// Route toggle
-document.querySelectorAll('.route-btn').forEach(btn => {
-  btn.onclick = () => {
-    document.querySelectorAll('.route-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderRoute(btn.dataset.route);
+document.querySelectorAll('input[name="route"]').forEach(radio => {
+  radio.onchange = () => { if (radio.checked) renderRoute(radio.value); };
+});
+
+document.querySelectorAll('.win-btn').forEach(btn => {
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    alert("This isn't 1998. The window stays open.");
   };
 });
 
 renderRoute('standard');
+setTimeout(() => map.invalidateSize(), 50);
 </script>
 </body>
 </html>
