@@ -34,15 +34,16 @@ Two itineraries share the same Route 5 + Empire State Trail corridor — toggle 
 | 7 | Poughkeepsie | ~160 km |
 | 8 | New York City | ~130 km |
 
-**Aggressive (5 days, no rest, 200+ km days):**
+**Aggressive (5 riding days + rest after Syracuse, 200+ km days):**
 
 | Day | To | Distance |
 |-----|----|----|
 | 1 | Batavia, NY | ~230 km |
 | 2 | Syracuse | ~275 km (longest) |
-| 3 | Amsterdam, NY | ~225 km |
-| 4 | Poughkeepsie | ~215 km |
-| 5 | New York City | ~130 km (arrival) |
+| 3 | REST in Syracuse | 0 km |
+| 4 | Amsterdam, NY | ~225 km |
+| 5 | Poughkeepsie | ~215 km |
+| 6 | New York City | ~130 km (arrival) |
 
 ## Updating the data
 

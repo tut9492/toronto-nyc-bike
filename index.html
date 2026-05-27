@@ -59,8 +59,8 @@
       <h1 class="title">Toronto → NYC</h1>
       <p class="subtitle">Via Route 5 + Empire State Trail</p>
       <div class="route-toggle">
-        <button class="route-btn active" data-route="standard">Standard · 7 days</button>
-        <button class="route-btn" data-route="aggressive">Aggressive · 5 days</button>
+        <button class="route-btn active" data-route="standard">Standard · 7 + rest</button>
+        <button class="route-btn" data-route="aggressive">Aggressive · 5 + rest</button>
       </div>
     </div>
     <div class="summary" id="summary"></div>
@@ -141,23 +141,24 @@ const ITINERARIES = {
     stats: [
       { value: "~1,065", label: "km total" },
       { value: "5", label: "riding days" },
-      { value: "~213", label: "km/day avg" }
+      { value: "+1", label: "rest day" }
     ],
     days: [
-      { name: "START — Toronto", lng: -79.3832, lat: 43.6532, meta: "Departure", desc: "Long days ahead, no rest day. Pre-stage everything the night before. Dawn departure." },
+      { name: "START — Toronto", lng: -79.3832, lat: 43.6532, meta: "Departure", desc: "Long days ahead. Pre-stage everything the night before. Dawn departure." },
       { name: "DAY 1 — Batavia, NY", lng: -78.1876, lat: 43.002, meta: "~230 km", desc: "Toronto → Hamilton → St. Catharines → Peace Bridge → Buffalo → Batavia via Route 5. Border crossing eats 30-60 min; cross at dawn. Refuel in Buffalo before pushing east." },
       { name: "DAY 2 — Syracuse", lng: -76.1474, lat: 43.0481, meta: "~275 km (longest)", desc: "Heaviest day. Route 5 through Rochester (lunch refuel), Geneva, north of Finger Lakes. Start at first light. Stay Armory Square — safest district." },
-      { name: "DAY 3 — Amsterdam, NY", lng: -74.1882, lat: 42.9384, meta: "~225 km", desc: "Through Utica, into Mohawk Valley. Rolling hills begin. Amsterdam has limited downtown lodging — book ahead or push +30km to Schenectady for more options." },
-      { name: "DAY 4 — Poughkeepsie", lng: -73.9209, lat: 41.7004, meta: "~215 km", desc: "Schenectady → Albany → onto Empire State Trail south through Hudson Valley. Cross Walkway Over the Hudson on arrival." },
+      { name: "DAY 3 — REST in Syracuse", lng: -76.1474, lat: 43.0481, meta: "0 km · recovery", desc: "Earned. Sleep in, eat big, walk Armory Square. Bike shop within 1km if anything needs attention before the second half." },
+      { name: "DAY 4 — Amsterdam, NY", lng: -74.1882, lat: 42.9384, meta: "~225 km", desc: "Through Utica, into Mohawk Valley. Rolling hills begin. Amsterdam has limited downtown lodging — book ahead or push +30km to Schenectady for more options." },
+      { name: "DAY 5 — Poughkeepsie", lng: -73.9209, lat: 41.7004, meta: "~215 km", desc: "Schenectady → Albany → onto Empire State Trail south through Hudson Valley. Cross Walkway Over the Hudson on arrival." },
       { name: "FINISH — New York City", lng: -74.006, lat: 40.7128, meta: "~130 km (arrival)", desc: "Shorter final day by design — arrive fresh, avoid Manhattan rush hour. Hudson River Greenway into Battery Park." }
     ],
     hotels: [
       { name: "Lodging in Batavia", city: "Batavia", day: "DAY 1", lng: -78.1876, lat: 43.002, desc: "Small town with chain hotels off I-90 exit 48 (Hampton Inn, Holiday Inn Express area). Verify availability + rates before booking." },
-      { name: "Courtyard Marriott Armory Square", city: "Syracuse", day: "DAY 2", lng: -76.158, lat: 43.0481, desc: "300 W Fayette St. ~$140-200/night. Armory Square, safest district. Same as standard route." },
-      { name: "Jefferson Clinton Hotel", city: "Syracuse", day: "DAY 2", lng: -76.1505, lat: 43.0445, desc: "416 S Clinton St. ~$120-170/night. Heart of Armory Square." },
-      { name: "Lodging in Amsterdam", city: "Amsterdam", day: "DAY 3", lng: -74.1882, lat: 42.9384, desc: "Amsterdam NY has very limited downtown options (mostly motels). Recommended: push +30km to Schenectady (Hampton Inn & Suites Schenectady-Downtown, Holiday Inn Express Schenectady) for safer overnight." },
-      { name: "DoubleTree Poughkeepsie (Civic Center)", city: "Poughkeepsie", day: "DAY 4", lng: -73.9263, lat: 41.7004, desc: "40 Civic Center Plaza. ~$120-180/night. 0.5km from Walkway Over the Hudson." },
-      { name: "Hampton Inn Poughkeepsie", city: "Poughkeepsie", day: "DAY 4", lng: -73.9259, lat: 41.6481, desc: "2361 South Rd. ~$130-170/night. Suburban strip on Route 9." }
+      { name: "Courtyard Marriott Armory Square", city: "Syracuse", day: "DAY 2+3", lng: -76.158, lat: 43.0481, desc: "300 W Fayette St. ~$140-200/night. Armory Square, safest district. Book 2 nights — rest day here." },
+      { name: "Jefferson Clinton Hotel", city: "Syracuse", day: "DAY 2+3", lng: -76.1505, lat: 43.0445, desc: "416 S Clinton St. ~$120-170/night. Heart of Armory Square. Boutique — better for the rest-day vibe." },
+      { name: "Lodging in Amsterdam", city: "Amsterdam", day: "DAY 4", lng: -74.1882, lat: 42.9384, desc: "Amsterdam NY has very limited downtown options (mostly motels). Recommended: push +30km to Schenectady (Hampton Inn & Suites Schenectady-Downtown, Holiday Inn Express Schenectady) for safer overnight." },
+      { name: "DoubleTree Poughkeepsie (Civic Center)", city: "Poughkeepsie", day: "DAY 5", lng: -73.9263, lat: 41.7004, desc: "40 Civic Center Plaza. ~$120-180/night. 0.5km from Walkway Over the Hudson." },
+      { name: "Hampton Inn Poughkeepsie", city: "Poughkeepsie", day: "DAY 5", lng: -73.9259, lat: 41.6481, desc: "2361 South Rd. ~$130-170/night. Suburban strip on Route 9." }
     ]
   }
 };
