@@ -1066,6 +1066,90 @@ function slopeAt(km) {
   return (elevAt(km + 0.5) - elevAt(km - 0.5));
 }
 
+// ===== PIXEL-ART HUMANS for the finish-line celebration =====
+const PALETTES = [
+  { skin: '#f5c896', hair: '#3d2817', shirt: '#e64414', pants: '#1a3a6e' }, // rider (orange)
+  { skin: '#e8b78a', hair: '#000000', shirt: '#22aa44', pants: '#4d3d2e' }, // friend 1 green
+  { skin: '#d99166', hair: '#5e2814', shirt: '#ffdd33', pants: '#3a3a3a' }, // friend 2 yellow
+  { skin: '#f5c896', hair: '#aa6633', shirt: '#0099dd', pants: '#3d2817' }, // friend 3 blue
+  { skin: '#c98763', hair: '#1a1a1a', shirt: '#aa44dd', pants: '#222222' }, // friend 4 purple
+  { skin: '#e8b78a', hair: '#cc6699', shirt: '#ff66aa', pants: '#1a3a6e' }  // friend 5 pink
+];
+
+function pxFill(cx, y, s, gx, gy, gw, gh, color) {
+  gctx.fillStyle = color;
+  gctx.fillRect(cx + gx * s, y + gy * s, gw * s, gh * s);
+}
+
+function pixelBike(cx, y, s) {
+  const p = (gx, gy, gw, gh, c) => pxFill(cx, y, s, gx, gy, gw, gh, c);
+  // Two wheels (3x3 with hub)
+  p(-5, -3, 3, 3, '#1a1a1a');
+  p(2, -3, 3, 3, '#1a1a1a');
+  p(-4, -2, 1, 1, '#999');
+  p(3, -2, 1, 1, '#999');
+  // Horizontal frame
+  p(-3, -3, 5, 1, '#444');
+  // Seat post + seat
+  p(-2, -5, 1, 2, '#444');
+  p(-3, -6, 2, 1, '#222');
+  // Handlebar post + bar
+  p(2, -5, 1, 2, '#444');
+  p(2, -6, 2, 1, '#222');
+}
+
+function pixelHuman(cx, baseY, s, palette, pose, bob = 0) {
+  const y = baseY + bob;
+  const c = palette;
+  const p = (gx, gy, gw, gh, col) => pxFill(cx, y, s, gx, gy, gw, gh, col);
+
+  // Shoes
+  p(-3, -1, 3, 1, '#000');
+  p(0, -1, 3, 1, '#000');
+  // Legs
+  p(-2, -6, 2, 5, c.pants);
+  p(0, -6, 2, 5, c.pants);
+  // Torso
+  p(-3, -12, 6, 6, c.shirt);
+  // Neck
+  p(-1, -13, 2, 1, c.skin);
+  // Head
+  p(-2, -17, 4, 4, c.skin);
+  // Hair: top + sideburns
+  p(-2, -18, 4, 1, c.hair);
+  p(-2, -17, 1, 1, c.hair);
+  p(1, -17, 1, 1, c.hair);
+  // Eyes
+  p(-1, -16, 1, 1, '#000');
+  p(0, -16, 1, 1, '#000');
+  // Smile
+  p(-1, -14, 2, 1, '#000');
+
+  if (pose === 'up' || pose === 'holdbike') {
+    // Both arms raised
+    p(-4, -16, 1, 4, c.shirt);
+    p(3, -16, 1, 4, c.shirt);
+    p(-4, -19, 1, 3, c.skin);
+    p(3, -19, 1, 3, c.skin);
+  } else if (pose === 'cheer') {
+    // Right arm up, left arm down
+    p(3, -16, 1, 4, c.shirt);
+    p(3, -19, 1, 3, c.skin);
+    p(-4, -11, 1, 4, c.shirt);
+    p(-4, -7, 1, 1, c.skin);
+  } else {
+    // Arms at sides
+    p(-4, -11, 1, 4, c.shirt);
+    p(3, -11, 1, 4, c.shirt);
+    p(-4, -7, 1, 1, c.skin);
+    p(3, -7, 1, 1, c.skin);
+  }
+
+  if (pose === 'holdbike') {
+    pixelBike(cx, y - 22 * s, s);
+  }
+}
+
 function newGameState(route = 'excited') {
   const cities = CHECKPOINTS[route].map(c => ({ ...c, time: null }));
   const cityKms = cities.map(c => c.km);
@@ -1444,43 +1528,49 @@ function drawGame() {
       gctx.fillText('OUCH', bikeX, bikeY - 40);
     }
   } else {
-    // Celebration: rider dismounts, lifts bike overhead, friends arrive cheering
-    const bounce = Math.sin(performance.now() / 180) * 5;
-    const liftP = Math.min(1, (winSec - 0.9) / 0.8);  // 0..1 over 0.8s
-    const bikeLift = 14 + liftP * 64;
-    const armUp = liftP > 0.5;
+    // Pixel-art celebration scene
+    const t = performance.now();
+    const liftP = Math.min(1, (winSec - 0.9) / 0.8);
+    const baseGround = roadY(bikeX) + 4;
+    const PIXEL_SCALE = Math.max(2, Math.floor(H / 110));
 
-    gctx.font = '40px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
-    gctx.textAlign = 'center';
-    gctx.textBaseline = 'bottom';
+    // Rider — 'side' while bike floats up, then 'holdbike' once overhead
+    const riderPose = liftP >= 1 ? 'holdbike' : 'side';
+    const riderBob = liftP >= 1 ? Math.sin(t / 180) * 3 : 0;
+    pixelHuman(bikeX, baseGround, PIXEL_SCALE, PALETTES[0], riderPose, riderBob);
 
-    // Rider
-    const riderEmoji = liftP >= 1 ? '🙆' : '🧍';
-    gctx.fillText(riderEmoji, bikeX, groundY + 4 + (liftP >= 1 ? bounce : 0));
-    // Bike — rising up then held high (mirrored to face right, matching ride direction)
-    gctx.save();
-    gctx.translate(bikeX, groundY + 4 - bikeLift + (liftP >= 1 ? bounce * 0.4 : 0));
-    gctx.scale(-1, 1);
-    gctx.fillText('🚲', 0, 0);
-    gctx.restore();
+    // Bike floats up to overhead position before rider grabs it
+    if (liftP < 1) {
+      const bikeLift = 14 + liftP * 50;
+      pixelBike(bikeX, baseGround - bikeLift, PIXEL_SCALE);
+    }
 
-    // Friends slide in from right after 2s
+    // Friends slide in from the right after 2s
     if (winSec >= 2) {
       const arrival = Math.min(1, (winSec - 2) / 0.7);
       const ease = 1 - Math.pow(1 - arrival, 3);
-      const friends = ['🙋', '🥳', '🙌', '🙋‍♀️', '🙋‍♂️'];
-      for (let i = 0; i < friends.length; i++) {
-        const targetX = bikeX + 70 + i * 56;
+      const poses = ['up', 'cheer', 'up', 'cheer', 'up'];
+      const spacing = 22 * PIXEL_SCALE;
+      for (let i = 0; i < 5; i++) {
+        const targetX = bikeX + 28 * PIXEL_SCALE + i * spacing;
         const startX = W + 80;
         const x = startX + (targetX - startX) * ease;
-        const fBounce = Math.sin(performance.now() / 180 + i * 0.7) * 6;
-        gctx.fillText(friends[i], x, groundY + 4 + fBounce);
+        const fBob = Math.sin(t / 180 + i * 0.7) * 5;
+        const friendGround = roadY(x) + 4;
+        pixelHuman(x, friendGround, PIXEL_SCALE, PALETTES[i + 1], poses[i], fBob);
       }
-      // Sparkles around the lifted bike
-      if (Math.random() < 0.4) {
-        gctx.font = '18px sans-serif';
-        const sx = bikeX + (Math.random() - 0.5) * 60;
-        const sy = groundY + 4 - bikeLift - 20 + (Math.random() - 0.5) * 20;
+      // Confetti dots and a sparkle or two
+      if (Math.random() < 0.5) {
+        gctx.fillStyle = ['#ff00aa', '#ffeb3b', '#00ff66', '#0099dd', '#ff5500'][Math.floor(Math.random() * 5)];
+        const sx = bikeX + (Math.random() - 0.3) * (W * 0.6);
+        const sy = baseGround - 60 - Math.random() * 80;
+        gctx.fillRect(sx, sy, 4, 4);
+      }
+      if (Math.random() < 0.35) {
+        gctx.font = '20px sans-serif';
+        gctx.textAlign = 'center';
+        const sx = bikeX + (Math.random() - 0.5) * 80;
+        const sy = baseGround - 25 * PIXEL_SCALE + (Math.random() - 0.5) * 30;
         gctx.fillText('✨', sx, sy);
       }
     }
