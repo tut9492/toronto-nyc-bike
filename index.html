@@ -1157,9 +1157,9 @@ function newGameState(route = 'excited') {
     route,
     km: 0,
     speed: 0,        // player-controlled
-    maxSpeed: 70,    // 2× slower than before
-    accel: 115,
-    drag: 55,
+    maxSpeed: 35,    // 4× slower than the original auto-ride
+    accel: 58,
+    drag: 28,
     bikeAir: 0,
     bikeVY: 0,
     won: false,
@@ -1243,7 +1243,7 @@ function gameTick(t) {
 
   // Slope: positive slope (going uphill) slows; negative (downhill) speeds up.
   const slope = slopeAt(gs.km);
-  gs.speed -= slope * 70 * dt;
+  gs.speed -= slope * 35 * dt;
 
   // Wheelie boost while wheelie-ing
   if (gs.wheelieT > 0) {
