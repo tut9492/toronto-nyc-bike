@@ -424,6 +424,65 @@
   #lb-list li.current { background: #ffeb3b; font-weight: 700; }
   .lb-actions { display: flex; gap: 6px; justify-content: center; }
   .lb-actions .map-btn { padding: 6px 12px; }
+
+  #welcome-popup {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(400px, calc(100vw - 32px));
+    z-index: 10001;
+    box-shadow: 6px 6px 0 rgba(0,0,0,0.4);
+  }
+  #welcome-popup.show { display: block; }
+  .welcome-body { padding: 24px 28px 22px; background: var(--gray); text-align: center; }
+  .welcome-headline {
+    font-size: 52px; font-weight: 900;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    line-height: 1;
+    text-shadow: 3px 3px 0 var(--ink);
+  }
+  .welcome-subhead {
+    font-size: 18px; font-weight: 700;
+    margin: 8px 0 14px;
+    letter-spacing: 0.08em;
+  }
+  .welcome-line {
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    color: var(--gray-darker);
+    margin: 0 0 22px;
+  }
+  .welcome-actions { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+  .welcome-btn {
+    background: var(--gray);
+    border-top: 2px solid var(--light);
+    border-left: 2px solid var(--light);
+    border-right: 2px solid var(--gray-darker);
+    border-bottom: 2px solid var(--gray-darker);
+    font: inherit; font-size: 12px;
+    cursor: pointer; color: var(--ink);
+    padding: 9px 18px;
+  }
+  .welcome-btn:active {
+    border-top-color: var(--gray-darker); border-left-color: var(--gray-darker);
+    border-right-color: var(--light); border-bottom-color: var(--light);
+  }
+  .welcome-btn.primary {
+    background: #ff00aa; color: #fff;
+    font-weight: 700; font-size: 18px;
+    padding: 14px 24px;
+    border-top-color: #ff66cc; border-left-color: #ff66cc;
+    border-right-color: #6b0049; border-bottom-color: #6b0049;
+    box-shadow: 3px 3px 0 #000;
+    animation: welcomePulse 1.4s ease-in-out infinite;
+    text-shadow: 1px 1px 0 #6b0049;
+  }
+  @keyframes welcomePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
   @media (max-width: 800px) {
     #app { grid-template-columns: 1fr; grid-template-rows: 40vh 1fr; height: calc(100vh - 23px); }
     body.game-active #app { grid-template-rows: 0 1fr; }
@@ -538,6 +597,24 @@
       <div class="lb-actions">
         <button class="map-btn" id="lb-replay">▶ RIDE AGAIN</button>
         <button class="map-btn" id="lb-back">↩ BACK TO MAP</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="welcome-popup" class="show">
+  <div class="window">
+    <div class="titlebar">
+      <div class="titlebar-title"><span class="titlebar-icon">🚴</span><span>BIKETRIP.EXE</span></div>
+      <div class="win-controls"><button class="win-btn" id="welcome-close">×</button></div>
+    </div>
+    <div class="welcome-body">
+      <div class="welcome-headline">RACE</div>
+      <div class="welcome-subhead">TORONTO → NYC</div>
+      <p class="welcome-line">1,065 km · hills, hazards, ramps · best time wins</p>
+      <div class="welcome-actions">
+        <button class="welcome-btn primary" id="welcome-play">🚴 PLAY THE GAME</button>
+        <button class="welcome-btn" id="welcome-plan">📍 just plan the trip</button>
       </div>
     </div>
   </div>
@@ -1331,6 +1408,7 @@ function startGame(route = 'excited') {
   if (gameRunning) stopGame();
   gameRunning = true;
   gameState = newGameState(route);
+  gameState.gameStartedAt = performance.now();
   document.body.classList.add('game-active');
   document.getElementById('btn-ride').style.display = 'none';
   document.getElementById('btn-stop').style.display = '';
@@ -1792,6 +1870,38 @@ function drawGame() {
     gctx.fillText(b.sub, W / 2, H * 0.32 + 84);
   }
 
+  // 3-second controls overlay shown right after the game starts
+  if (gameState.gameStartedAt) {
+    const since = (performance.now() - gameState.gameStartedAt) / 1000;
+    if (since < 3.2) {
+      const op = since < 2 ? 1 : Math.max(0, (3.2 - since) / 1.2);
+      const cx = W / 2, cy = H * 0.42;
+      const boxW = Math.min(W - 40, 460), boxH = 168;
+      gctx.fillStyle = `rgba(0, 0, 0, ${0.78 * op})`;
+      gctx.fillRect(cx - boxW / 2, cy - boxH / 2, boxW, boxH);
+      gctx.strokeStyle = `rgba(255, 0, 170, ${op})`;
+      gctx.lineWidth = 3;
+      gctx.strokeRect(cx - boxW / 2, cy - boxH / 2, boxW, boxH);
+      gctx.textAlign = 'center';
+      gctx.textBaseline = 'middle';
+      gctx.fillStyle = `rgba(255, 0, 170, ${op})`;
+      gctx.font = 'bold 22px "Tahoma", sans-serif';
+      gctx.fillText('CONTROLS', cx, cy - 56);
+      gctx.fillStyle = `rgba(255, 255, 255, ${op})`;
+      gctx.font = 'bold 17px "Tahoma", sans-serif';
+      gctx.fillText('→ HOLD TO PEDAL', cx, cy - 22);
+      gctx.fillText('↓ JUMP    ·    ← WHEELIE', cx, cy + 4);
+      gctx.fillStyle = `rgba(255, 0, 170, ${op})`;
+      gctx.font = 'bold 16px "Tahoma", sans-serif';
+      gctx.fillText('← then ↓ = MEGA JUMP 🚀', cx, cy + 32);
+      gctx.fillStyle = `rgba(0, 255, 102, ${op})`;
+      gctx.font = 'bold 11px "Courier New", monospace';
+      gctx.fillText('FASTEST TIME WINS', cx, cy + 60);
+      gctx.textAlign = 'left';
+      gctx.textBaseline = 'middle';
+    }
+  }
+
   // Win banner — top strip so celebration scene stays visible
   if (gameState.won && performance.now() - gameState.finishedAt > 2700) {
     gctx.fillStyle = 'rgba(0,0,0,0.72)';
@@ -1891,6 +2001,19 @@ function bindTap(btnId, fn) {
 }
 bindTap('touch-jump', () => { if (gameRunning) jumpBike(); });
 bindTap('touch-wheelie', () => { if (gameRunning) gameWheelie(); });
+
+// ===== WELCOME POPUP =====
+function hideWelcome() {
+  document.getElementById('welcome-popup').classList.remove('show');
+}
+document.getElementById('welcome-close').onclick = hideWelcome;
+document.getElementById('welcome-plan').onclick = hideWelcome;
+document.getElementById('welcome-play').onclick = () => {
+  hideWelcome();
+  const radio = document.querySelector('input[name="route"][value="excited"]');
+  radio.checked = true;
+  radio.dispatchEvent(new Event('change'));
+};
 
 gameCanvas.addEventListener('keydown', (e) => {
   if (!gameRunning) return;
