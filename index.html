@@ -424,6 +424,41 @@
   #lb-list li.current { background: #ffeb3b; font-weight: 700; }
   .lb-actions { display: flex; gap: 6px; justify-content: center; }
   .lb-actions .map-btn { padding: 6px 12px; }
+  #lb-submit-wrap { display: flex; gap: 6px; margin: 0 0 10px; }
+  #lb-name {
+    flex: 1;
+    background: var(--light);
+    border-top: 1px solid var(--gray-darker);
+    border-left: 1px solid var(--gray-darker);
+    border-right: 1px solid var(--light);
+    border-bottom: 1px solid var(--light);
+    padding: 6px 8px;
+    font: inherit;
+    font-family: "Courier New", monospace;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink);
+  }
+  #lb-name:focus { outline: 2px dotted #ff00aa; outline-offset: -3px; }
+  #lb-submit {
+    background: #ff00aa;
+    color: #fff;
+    font-weight: 700;
+    border-top: 2px solid #ff66cc;
+    border-left: 2px solid #ff66cc;
+    border-right: 2px solid #6b0049;
+    border-bottom: 2px solid #6b0049;
+    padding: 6px 14px;
+    font: inherit; font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #lb-submit:active { border-top-color: #6b0049; border-left-color: #6b0049; border-right-color: #ff66cc; border-bottom-color: #ff66cc; }
+  #lb-submit:disabled { background: var(--gray-dark); cursor: not-allowed; }
+  #lb-status { font-size: 11px; color: var(--gray-darker); min-height: 14px; margin-bottom: 4px; font-family: "Courier New", monospace; }
+  #lb-status.error { color: #c00; }
+  #lb-status.ok { color: #060; }
 
   #welcome-popup {
     display: none;
@@ -593,6 +628,11 @@
     <div class="lb-body">
       <div id="lb-your-time">YOUR TIME: --</div>
       <div id="lb-your-route">—</div>
+      <div id="lb-submit-wrap">
+        <input id="lb-name" maxlength="12" placeholder="YOUR NAME" autocomplete="off">
+        <button id="lb-submit">▶ SUBMIT TIME</button>
+      </div>
+      <div id="lb-status"></div>
       <ol id="lb-list"></ol>
       <div class="lb-actions">
         <button class="map-btn" id="lb-replay">▶ RIDE AGAIN</button>
@@ -1921,44 +1961,99 @@ function drawGame() {
 
 gameCanvas.addEventListener('click', () => { gameCanvas.focus(); });
 
-// ===== LEADERBOARD =====
+// ===== LEADERBOARD (shared via /api/leaderboard, local fallback) =====
 function lbKey(route) { return 'bike_lb_' + route; }
-function getLB(route) {
+function getLocalLB(route) {
   try { return JSON.parse(localStorage.getItem(lbKey(route))) || []; }
   catch { return []; }
 }
-function saveLB(route, time, crashes) {
-  const lb = getLB(route);
-  lb.push({ time, crashes, when: Date.now() });
+function saveLocalLB(route, name, time, crashes) {
+  const lb = getLocalLB(route);
+  lb.push({ name: name || 'YOU', time, crashes, ts: Date.now() });
   lb.sort((a, b) => a.time - b.time);
-  const trimmed = lb.slice(0, 10);
+  const trimmed = lb.slice(0, 20);
   localStorage.setItem(lbKey(route), JSON.stringify(trimmed));
   return trimmed;
 }
 
-function showLeaderboard(route, finalTime, crashes) {
-  const lb = saveLB(route, finalTime, crashes);
+async function fetchRemoteLB(route) {
+  try {
+    const resp = await fetch(`/api/leaderboard?route=${route}`);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return Array.isArray(data.entries) ? data.entries : null;
+  } catch { return null; }
+}
+async function submitRemoteLB(route, name, time, crashes) {
+  try {
+    const resp = await fetch('/api/leaderboard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ route, name, time, crashes })
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) return { ok: false, error: data.error || `http ${resp.status}` };
+    return { ok: true, entries: data.entries || [] };
+  } catch (e) {
+    return { ok: false, error: 'network error' };
+  }
+}
+
+function renderLBEntries(entries, highlightTime) {
   const list = document.getElementById('lb-list');
   list.innerHTML = '';
-  const top = lb.slice(0, 5);
-  top.forEach(entry => {
+  if (!entries || entries.length === 0) {
+    list.innerHTML = '<li>(no times yet — be the first)</li>';
+    return;
+  }
+  entries.slice(0, 5).forEach((e, i) => {
     const li = document.createElement('li');
-    const crashTxt = entry.crashes ? ` · ${entry.crashes}✕` : '';
-    li.textContent = `${fmtTime(entry.time)}${crashTxt}`;
-    if (Math.abs(entry.time - finalTime) < 0.001 && entry.when === lb[0].when) {
-      li.classList.add('current');
-    } else if (Math.abs(entry.time - finalTime) < 0.001) {
+    const name = (e.name || 'anon').padEnd(12, ' ').slice(0, 12);
+    const crashTxt = e.crashes ? ` ${e.crashes}✕` : '';
+    li.textContent = `${name} ${fmtTime(e.time)}${crashTxt}`;
+    if (typeof highlightTime === 'number' && Math.abs(e.time - highlightTime) < 0.005) {
       li.classList.add('current');
     }
     list.appendChild(li);
   });
-  if (top.length === 0) {
-    list.innerHTML = '<li>(no times yet)</li>';
-  }
-  document.getElementById('lb-your-time').textContent = `YOUR TIME: ${fmtTime(finalTime)}`;
-  document.getElementById('lb-your-route').textContent = `${route.toUpperCase()} ROUTE · ${crashes} crash${crashes === 1 ? '' : 'es'}`;
-  document.getElementById('lb-popup').classList.add('show');
 }
+
+let lbContext = { route: 'excited', time: 0, crashes: 0, submitted: false };
+
+async function showLeaderboard(route, finalTime, crashes) {
+  lbContext = { route, time: finalTime, crashes, submitted: false };
+
+  document.getElementById('lb-your-time').textContent = `YOUR TIME: ${fmtTime(finalTime)}`;
+  document.getElementById('lb-your-route').textContent =
+    `${route.toUpperCase()} ROUTE · ${crashes} crash${crashes === 1 ? '' : 'es'}`;
+
+  const nameInput = document.getElementById('lb-name');
+  nameInput.value = (localStorage.getItem('bike_player_name') || '').toUpperCase();
+  const submitBtn = document.getElementById('lb-submit');
+  submitBtn.textContent = '▶ SUBMIT TIME';
+  submitBtn.disabled = false;
+  const status = document.getElementById('lb-status');
+  status.textContent = '';
+  status.className = '';
+
+  document.getElementById('lb-popup').classList.add('show');
+
+  // Render local fallback immediately while remote loads
+  const local = getLocalLB(route);
+  renderLBEntries(local, finalTime);
+
+  // Try to fetch remote leaderboard
+  const remote = await fetchRemoteLB(route);
+  if (remote) {
+    renderLBEntries(remote, finalTime);
+    document.getElementById('lb-submit-wrap').style.display = '';
+  } else {
+    document.getElementById('lb-submit-wrap').style.display = 'none';
+    status.textContent = 'shared leaderboard offline — local only';
+    status.className = 'error';
+  }
+}
+
 function hideLeaderboard() {
   document.getElementById('lb-popup').classList.remove('show');
 }
@@ -1976,6 +2071,44 @@ document.getElementById('lb-back').onclick = () => {
   document.body.classList.remove('excited');
   renderRoute('standard');
 };
+
+document.getElementById('lb-submit').onclick = async () => {
+  if (lbContext.submitted) return;
+  const name = document.getElementById('lb-name').value.trim().toUpperCase();
+  const status = document.getElementById('lb-status');
+  if (!name || !/^[A-Z0-9 ._-]+$/.test(name)) {
+    status.textContent = 'name: 1-12 chars, A-Z 0-9 . _ -';
+    status.className = 'error';
+    return;
+  }
+  localStorage.setItem('bike_player_name', name);
+  saveLocalLB(lbContext.route, name, lbContext.time, lbContext.crashes);
+
+  const btn = document.getElementById('lb-submit');
+  btn.disabled = true;
+  btn.textContent = 'SUBMITTING...';
+  status.textContent = '';
+  status.className = '';
+
+  const result = await submitRemoteLB(lbContext.route, name, lbContext.time, lbContext.crashes);
+  if (result.ok) {
+    lbContext.submitted = true;
+    document.getElementById('lb-submit-wrap').style.display = 'none';
+    status.textContent = '✓ submitted';
+    status.className = 'ok';
+    renderLBEntries(result.entries, lbContext.time);
+  } else {
+    btn.disabled = false;
+    btn.textContent = '▶ RETRY';
+    status.textContent = `submit failed: ${result.error}`;
+    status.className = 'error';
+  }
+};
+
+// Submit on Enter
+document.getElementById('lb-name').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('lb-submit').click();
+});
 
 // ===== TOUCH CONTROLS =====
 function bindHold(btnId, onPress, onRelease) {

@@ -72,6 +72,24 @@ Goal: reach NYC in the fastest time. Each city flag pops a banner with your `T+t
 
 **Mobile** — touch buttons appear bottom-right when on a touch device or small viewport: big pink `→` (hold to go), `↓` (tap to jump), `←` (tap to wheelie). Sidebar collapses while game is active to give the canvas full screen.
 
+## Shared leaderboard (Vercel + Upstash Redis)
+
+After finishing the race, players can enter a name and submit their time to a shared leaderboard. The serverless function lives at `api/leaderboard.js` (Edge runtime); storage is Upstash Redis (free tier) attached via the Vercel Marketplace.
+
+**One-time setup:**
+
+1. Go to [vercel.com/dashboard](https://vercel.com/dashboard) → `toronto-nyc-bike` project → **Storage** tab
+2. **Create Database** → **Upstash for Redis** (Marketplace) → **Free** plan
+3. Name it whatever (`biketrip-lb` works) → **Create**
+4. Connect to `toronto-nyc-bike` project — env vars (`KV_REST_API_URL`, `KV_REST_API_TOKEN`) auto-populate
+5. Push any commit to trigger a redeploy with the new env vars (or hit Redeploy on the Vercel dashboard)
+
+Until storage is connected the API returns 503 and the frontend silently falls back to per-device localStorage. So the site keeps working either way — connecting Upstash just flips the leaderboard from local to shared.
+
+**API:**
+- `GET /api/leaderboard?route=excited|aggressive` → `{ entries: [{name, time, crashes, ts}] }` (top 10)
+- `POST /api/leaderboard` with `{route, name, time, crashes}` → same shape after insert; auto-trims to top 100 per route to keep size bounded
+
 **Sounds** (Web Audio API, no audio files): doppler car whooshes pass every few seconds during a ride; gear-shift clicks fire occasionally on their own and on wheelies/ramps; bike-bell ding marks city crossings; low thunk on crash.
 
 ## Updating the data
