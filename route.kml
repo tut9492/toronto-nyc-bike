@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>toronto to NYC bike trip</name>
+    <description/>
+    <Style id="icon-1899-DB4436-normal">
+      <IconStyle>
+        <color>ff3644db</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-DB4436-highlight">
+      <IconStyle>
+        <color>ff3644db</color>
+        <scale>1</scale>
+        <Icon>
+          <href>https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-DB4436">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-DB4436-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-DB4436-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="line-E64414-4000-nodesc-normal">
+      <LineStyle>
+        <color>ff1444e6</color>
+        <width>4</width>
+      </LineStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <Style id="line-E64414-4000-nodesc-highlight">
+      <LineStyle>
+        <color>ff1444e6</color>
+        <width>6</width>
+      </LineStyle>
+      <BalloonStyle>
+        <text><![CDATA[<h3>$[name]</h3>]]></text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="line-E64414-4000-nodesc">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#line-E64414-4000-nodesc-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#line-E64414-4000-nodesc-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Folder>
+      <name>Route</name>
+      <Placemark>
+        <name>Toronto → NYC via Route 5 + Empire State Trail</name>
+        <styleUrl>#line-E64414-4000-nodesc</styleUrl>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>
+            -79.3832,43.6532,0
+            -79.5441,43.589,0
+            -79.6393,43.5048,0
+            -79.7633,43.3832,0
+            -79.8,43.1823,0
+            -79.2469,43.1594,0
+            -79.0849,43.0896,0
+            -78.9323,42.9014,0
+            -78.8784,42.8864,0
+            -78.1876,43.002,0
+            -77.6088,43.1566,0
+            -77.0445,43.0797,0
+            -76.1474,43.0481,0
+            -75.6497,43.0735,0
+            -75.2327,43.1009,0
+            -74.9802,43.0501,0
+            -74.5688,42.942,0
+            -73.9396,42.8142,0
+            -73.7562,42.6526,0
+            -73.791,42.2529,0
+            -73.901,41.9409,0
+            -73.9209,41.7004,0
+            -73.984,41.5048,0
+            -73.8934,41.29,0
+            -73.8685,41.0534,0
+            -73.8987,40.9312,0
+            -74.006,40.7128,0
+          </coordinates>
+        </LineString>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>Overnight Stops</name>
+      <Placemark>
+        <name>START — Toronto</name>
+        <description>Departure. Head west on Waterfront Trail.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -79.3832,43.6532,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>BORDER — Peace Bridge (Fort Erie → Buffalo)</name>
+        <description>Use south sidewalk. Passport required. Cross early morning to avoid traffic.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -78.9323,42.9014,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>DAY 1 — Buffalo (~160 km)</name>
+        <description>Via Waterfront Trail, Hamilton, St. Catharines, Peace Bridge. Stay in Theatre District / Allentown — safe, well-lit. AVOID East Side east of Main St.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -78.8784,42.8864,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>DAY 2 — Rochester (~175 km)</name>
+        <description>Route 5 west through Batavia. Stay near East Main St / Convention Center area. AVOID north of Main St residential areas.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -77.6088,43.1566,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>DAY 3 — Syracuse (~165 km)</name>
+        <description>Route 5 through Finger Lakes north. Stay in Armory Square — best district in town. AVOID west side past Geddes St, south side.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -76.1474,43.0481,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>DAY 4+5 — Utica / REST DAY (~100 km)</name>
+        <description>Shorter ride, then rest day. Stay on Genesee Street (north section). AVOID south of Oriskany St, west side residential.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -75.2327,43.1009,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>DAY 6 — Albany (~175 km)</name>
+        <description>Mohawk Valley, some rolling hills. Stay in government district near Capitol. AVOID Arbor Hill (north of Clinton Ave), South End.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.7562,42.6526,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>DAY 7 — Poughkeepsie (~160 km)</name>
+        <description>Empire State Trail south, Hudson Valley. Stay near Civic Center / waterfront or go suburban on Route 9. AVOID Main St / Market St corridor, south side neighborhoods.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.9209,41.7004,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>FINISH — New York City (~130 km)</name>
+        <description>Hudson River Greenway into Manhattan. Battery Park. You made it.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -74.006,40.7128,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>Hotels</name>
+      <Placemark>
+        <name>🏨 Best Western On The Avenue (Buffalo)</name>
+        <description><![CDATA[DAY 1 — 510 Delaware Ave. ~$75-100/night. Allentown — one of Buffalo's safest neighborhoods. 1km from Route 5 but right on your approach from Peace Bridge.]]></description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -78.8768,42.8986,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>🏨 Aloft Buffalo Downtown (Buffalo)</name>
+        <description>DAY 1 — 500 Pearl St. ~$120-180/night. Theatre District, 3 blocks from Route 5. Safe, busy evening foot traffic.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -78.871,42.8876,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>🏨 Hilton Garden Inn Rochester Downtown</name>
+        <description>DAY 2 — 155 E Main St. ~$130-200/night. DIRECTLY ON Route 5. Convention center area, well-patrolled.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -77.6078,43.1568,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>🏨 Hyatt Regency Rochester</name>
+        <description>DAY 2 — 125 E Main St. ~$120-180/night. DIRECTLY ON Route 5. Convention center corridor.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -77.6115,43.1568,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>🏨 Courtyard Marriott Armory Square (Syracuse)</name>
+        <description>DAY 3 — 300 W Fayette St. ~$140-200/night. Armory Square, 2 blocks from Route 5. Safest district in Syracuse.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -76.158,43.0481,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>🏨 Jefferson Clinton Hotel (Syracuse)</name>
+        <description>DAY 3 — 416 S Clinton St. ~$120-170/night. Heart of Armory Square. Boutique, surrounded by restaurants.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -76.1505,43.0445,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>🏨 Delta Hotels Marriott Utica (RECOMMENDED)</name>
+        <description>DAY 4+5 REST — 200 Genesee St. ~$110-160/night. DIRECTLY ON Route 5. Near Stanley Theatre. Good amenities for rest day.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -75.2316,43.0981,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>🏨 Fairfield Inn Utica Downtown</name>
+        <description>DAY 4+5 REST — 71 N Genesee St. ~$100-140/night. ON Route 5. North Genesee is the safer commercial section.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -75.2325,43.099,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>🏨 Red Roof Inn Utica</name>
+        <description>DAY 4+5 REST BUDGET — 20 Weaver St. ~$60-80/night. No frills but cheap.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -75.2163,43.1134,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>🏨 Hilton Albany</name>
+        <description>DAY 6 — 40 Lodge St. ~$140-200/night. Government district, 3 blocks from Empire State Trail at Corning Preserve.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.756,42.6497,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>🏨 Hampton Inn Albany Downtown</name>
+        <description>DAY 6 — 25 Chapel St. ~$130-180/night. Near Palace Theatre, 5 blocks from trail.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.7545,42.653,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>🏨 DoubleTree Poughkeepsie (Civic Center)</name>
+        <description><![CDATA[DAY 7 — 40 Civic Center Plaza. ~$120-180/night. 0.5km from Walkway Over the Hudson. Stay on the plaza side, don't wander east on Main St at night.]]></description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.9263,41.7004,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>🏨 Red Roof PLUS+ Poughkeepsie</name>
+        <description>DAY 7 BUDGET — 2349 South Rd. ~$70-90/night. Route 9 suburban strip, safe, 3km detour off trail.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.9257,41.6479,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>🏨 Hampton Inn Poughkeepsie</name>
+        <description>DAY 7 — 2361 South Rd. ~$130-170/night. Next to Red Roof, same safe suburban strip.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.9259,41.6481,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>Key Waypoints</name>
+      <Placemark>
+        <name>Hamilton</name>
+        <description>Day 1 — Waterfront Trail through Burlington</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -79.7633,43.3832,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>St. Catharines</name>
+        <description>Day 1 — Through Niagara wine country</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -79.2469,43.1594,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Batavia</name>
+        <description>Day 2 — Midway Buffalo to Rochester</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -78.1876,43.002,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Geneva</name>
+        <description>Day 3 — Finger Lakes, good lunch stop</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -77.0445,43.0797,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Amsterdam</name>
+        <description>Day 6 — Mohawk Valley, rolling hills begin</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -74.5688,42.942,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Schenectady</name>
+        <description>Day 6 — Last major town before Albany</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.9396,42.8142,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Hudson</name>
+        <description>Day 7 — Empire State Trail, 36mi paved from Albany</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.791,42.2529,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Rhinebeck</name>
+        <description>Day 7 — Scenic Hudson Valley town</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.901,41.9409,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Walkway Over the Hudson</name>
+        <description>Day 7 — Iconic converted rail bridge. A highlight of the trip.</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.943,41.714,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Beacon</name>
+        <description>Day 8 — Good coffee stop, Hudson Valley</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.984,41.5048,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Peekskill</name>
+        <description>Day 8 — Traffic picks up from here south</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.8934,41.29,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Tarrytown</name>
+        <description>Day 8 — Westchester, last stretch before NYC</description>
+        <styleUrl>#icon-1899-DB4436</styleUrl>
+        <Point>
+          <coordinates>
+            -73.8685,41.0534,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+  </Document>
+</kml>
