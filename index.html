@@ -297,7 +297,15 @@
     color: var(--gray-darker);
     margin-left: auto;
   }
-  #map:focus { outline: 2px dotted #ff00aa; outline-offset: -2px; }
+  #map:focus, #game:focus { outline: 2px dotted #ff00aa; outline-offset: -2px; }
+  #game {
+    width: 100%; height: 100%; display: none;
+    background: linear-gradient(to bottom, #6bc6ff 0%, #b8e4ff 55%, #d4a857 55%, #8b6914 100%);
+    image-rendering: pixelated;
+    cursor: pointer;
+  }
+  body.excited #map { display: none; }
+  body.excited #game { display: block; }
   .bike-wrap {
     width: 36px; height: 36px;
     display: flex; align-items: center; justify-content: center;
@@ -422,9 +430,13 @@
       <button class="map-btn" id="btn-wheelie">🚲 WHEELIE</button>
       <button class="map-btn" id="btn-reset">⟲ RESET</button>
       <button class="map-btn" id="btn-stop" style="display:none">■ STOP</button>
+      <button class="map-btn" id="btn-sound">🔊 ENGINE</button>
       <span class="map-hint">↑↓←→ ride · SPACE wheelie · ENTER auto · click map first</span>
     </div>
-    <div id="map-body"><div id="map" tabindex="0"></div></div>
+    <div id="map-body">
+      <div id="map" tabindex="0"></div>
+      <canvas id="game" tabindex="0"></canvas>
+    </div>
   </div>
 
 </div>
@@ -693,10 +705,114 @@ document.querySelectorAll('.tab-btn').forEach(tab => {
 document.querySelectorAll('input[name="route"]').forEach(radio => {
   radio.onchange = () => {
     if (!radio.checked) return;
-    document.body.classList.toggle('excited', radio.value === 'excited');
+    const isExcited = radio.value === 'excited';
+    document.body.classList.toggle('excited', isExcited);
     renderRoute(radio.value);
+    if (isExcited) {
+      stopAutoRide();
+      startGame();
+    } else {
+      stopGame();
+      setTimeout(() => map.invalidateSize(), 50);
+    }
   };
 });
+
+// ===== MOTORCYCLE SOUNDS =====
+let audioCtx = null;
+let engineNodes = null;
+let soundOn = true;
+let lastRev = 0;
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function startEngine() {
+  if (!soundOn) return;
+  initAudio();
+  if (engineNodes) return;
+  const ctx = audioCtx;
+  const osc1 = ctx.createOscillator(); osc1.type = 'sawtooth'; osc1.frequency.value = 90;
+  const osc2 = ctx.createOscillator(); osc2.type = 'sawtooth'; osc2.frequency.value = 93;
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 14;
+  const lfoGain = ctx.createGain(); lfoGain.gain.value = 8;
+  lfo.connect(lfoGain); lfoGain.connect(osc1.frequency); lfoGain.connect(osc2.frequency);
+  const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 700; filter.Q.value = 1.8;
+  const masterGain = ctx.createGain();
+  masterGain.gain.value = 0;
+  masterGain.gain.linearRampToValueAtTime(0.07, ctx.currentTime + 0.2);
+  osc1.connect(filter); osc2.connect(filter); filter.connect(masterGain); masterGain.connect(ctx.destination);
+  osc1.start(); osc2.start(); lfo.start();
+  engineNodes = { osc1, osc2, lfo, masterGain };
+}
+
+function stopEngine() {
+  if (!engineNodes) return;
+  const ctx = audioCtx;
+  const now = ctx.currentTime;
+  engineNodes.masterGain.gain.cancelScheduledValues(now);
+  engineNodes.masterGain.gain.setValueAtTime(engineNodes.masterGain.gain.value, now);
+  engineNodes.masterGain.gain.linearRampToValueAtTime(0, now + 0.3);
+  const nodes = engineNodes; engineNodes = null;
+  setTimeout(() => { try { nodes.osc1.stop(); nodes.osc2.stop(); nodes.lfo.stop(); } catch(e) {} }, 350);
+}
+
+function modulateEngine() {
+  if (!engineNodes) return;
+  const ctx = audioCtx;
+  const target = 80 + Math.random() * 50;
+  const t = ctx.currentTime;
+  engineNodes.osc1.frequency.linearRampToValueAtTime(target, t + 0.3);
+  engineNodes.osc2.frequency.linearRampToValueAtTime(target + 3, t + 0.3);
+}
+
+function revEngine(duration = 0.18, peak = 350) {
+  if (!soundOn) return;
+  initAudio();
+  const ctx = audioCtx;
+  const osc = ctx.createOscillator(); osc.type = 'sawtooth';
+  const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 1400;
+  const gain = ctx.createGain(); gain.gain.value = 0;
+  osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+  const t = ctx.currentTime;
+  osc.frequency.setValueAtTime(95, t);
+  osc.frequency.exponentialRampToValueAtTime(peak, t + duration * 0.4);
+  osc.frequency.exponentialRampToValueAtTime(110, t + duration);
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(0.1, t + 0.02);
+  gain.gain.linearRampToValueAtTime(0, t + duration);
+  osc.start(t); osc.stop(t + duration + 0.05);
+}
+
+function wheelieRev() {
+  if (!soundOn) return;
+  initAudio();
+  const ctx = audioCtx;
+  const osc = ctx.createOscillator(); osc.type = 'sawtooth';
+  const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 1800;
+  const gain = ctx.createGain(); gain.gain.value = 0;
+  osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+  const t = ctx.currentTime;
+  const dur = 0.7;
+  osc.frequency.setValueAtTime(110, t);
+  osc.frequency.exponentialRampToValueAtTime(550, t + 0.18);
+  osc.frequency.exponentialRampToValueAtTime(820, t + 0.4);
+  osc.frequency.exponentialRampToValueAtTime(160, t + dur);
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(0.14, t + 0.04);
+  gain.gain.setValueAtTime(0.14, t + dur * 0.7);
+  gain.gain.linearRampToValueAtTime(0, t + dur);
+  osc.start(t); osc.stop(t + dur + 0.05);
+}
+
+function throttledRev() {
+  const now = Date.now();
+  if (now - lastRev < 130) return;
+  lastRev = now;
+  revEngine();
+}
 
 // ===== BIKE PLAYGROUND =====
 const bikeIcon = L.divIcon({
@@ -711,12 +827,14 @@ function getBikeEl() { return document.getElementById('bike-emoji'); }
 
 function wheelie() {
   const el = getBikeEl();
-  if (!el) return;
-  el.classList.add('wheelie');
-  setTimeout(() => el.classList.remove('wheelie'), 600);
+  if (el) {
+    el.classList.add('wheelie');
+    setTimeout(() => el.classList.remove('wheelie'), 600);
+  }
   const toast = document.getElementById('wheelie-toast');
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 700);
+  wheelieRev();
 }
 
 function zoomShake() {
@@ -728,6 +846,7 @@ function zoomShake() {
 }
 
 let rideTimer = null;
+let rideModTimer = null;
 function startAutoRide() {
   stopAutoRide();
   document.getElementById('btn-ride').style.display = 'none';
@@ -735,6 +854,8 @@ function startAutoRide() {
   let i = 0;
   bikeMarker.setLatLng([ROUTE_LINE[0][1], ROUTE_LINE[0][0]]);
   map.flyTo([ROUTE_LINE[0][1], ROUTE_LINE[0][0]], 8, { duration: 0.8 });
+  startEngine();
+  rideModTimer = setInterval(modulateEngine, 350);
   rideTimer = setInterval(() => {
     if (i >= ROUTE_LINE.length) { stopAutoRide(); wheelie(); return; }
     const [lng, lat] = ROUTE_LINE[i];
@@ -746,7 +867,9 @@ function startAutoRide() {
 }
 function stopAutoRide() {
   if (rideTimer) clearInterval(rideTimer);
-  rideTimer = null;
+  if (rideModTimer) clearInterval(rideModTimer);
+  rideTimer = null; rideModTimer = null;
+  stopEngine();
   document.getElementById('btn-ride').style.display = '';
   document.getElementById('btn-stop').style.display = 'none';
 }
@@ -782,8 +905,292 @@ document.addEventListener('keydown', (e) => {
     bikeMarker.setLatLng([newLat, newLng]);
     map.panTo([newLat, newLng], { animate: true, duration: 0.2 });
     zoomShake();
+    throttledRev();
   }
 });
+
+document.getElementById('btn-sound').onclick = () => {
+  soundOn = !soundOn;
+  document.getElementById('btn-sound').textContent = soundOn ? '🔊 ENGINE' : '🔇 MUTED';
+  if (!soundOn) stopEngine();
+  else if (rideTimer || gameRunning) startEngine();
+};
+
+// ===== SIDE-SCROLLER GAME (Excited Bike mode) =====
+const gameCanvas = document.getElementById('game');
+const gctx = gameCanvas.getContext('2d');
+let gameRunning = false;
+let gameRAF = null;
+let gameState = null;
+let gameLastT = 0;
+let gameModTimer = null;
+
+function newGameState() {
+  return {
+    km: 0,
+    bikeAir: 0,
+    bikeVY: 0,
+    speed: 110,
+    won: false,
+    finishedAt: null,
+    cities: [
+      { km: 0,    name: 'TORONTO',   sub: 'START',                  shown: true },
+      { km: 335,  name: 'ROCHESTER', sub: 'DAY 1 · ~335 KM · ULTRA',   shown: false },
+      { km: 775,  name: 'ALBANY',    sub: 'DAY 2 · ~440 KM · INHUMAN', shown: false },
+      { km: 1065, name: 'NEW YORK',  sub: 'DAY 3 · ~290 KM · VICTORY', shown: false }
+    ],
+    obstacles: (() => {
+      const obs = []; let k = 120;
+      while (k < 1040) { obs.push({ km: k }); k += 80 + Math.random() * 120; }
+      return obs;
+    })(),
+    banner: null
+  };
+}
+
+function resizeGame() {
+  const r = gameCanvas.getBoundingClientRect();
+  gameCanvas.width = Math.floor(r.width);
+  gameCanvas.height = Math.floor(r.height);
+}
+
+function startGame() {
+  if (gameRunning) return;
+  gameRunning = true;
+  gameState = newGameState();
+  resizeGame();
+  gameCanvas.focus();
+  startEngine();
+  gameModTimer = setInterval(modulateEngine, 350);
+  gameLastT = performance.now();
+  gameRAF = requestAnimationFrame(gameTick);
+}
+
+function stopGame() {
+  gameRunning = false;
+  if (gameRAF) cancelAnimationFrame(gameRAF);
+  if (gameModTimer) clearInterval(gameModTimer);
+  gameRAF = null; gameModTimer = null;
+  stopEngine();
+}
+
+function jumpBike() {
+  if (!gameState || gameState.bikeAir > 0.01 || gameState.won) return;
+  gameState.bikeVY = 4.2;
+  revEngine(0.22, 520);
+}
+
+function gameTick(t) {
+  if (!gameRunning) return;
+  const dt = Math.min(0.05, (t - gameLastT) / 1000);
+  gameLastT = t;
+
+  if (!gameState.won) {
+    gameState.km += gameState.speed * dt;
+  } else if (gameState.km < 1090) {
+    gameState.km += gameState.speed * dt * 0.5;
+  }
+
+  // Bike physics
+  if (gameState.bikeAir > 0 || gameState.bikeVY > 0) {
+    gameState.bikeVY -= 11 * dt;
+    gameState.bikeAir += gameState.bikeVY * dt;
+    if (gameState.bikeAir <= 0) { gameState.bikeAir = 0; gameState.bikeVY = 0; }
+  }
+
+  // City checks
+  for (const c of gameState.cities) {
+    if (!c.shown && gameState.km >= c.km) {
+      c.shown = true;
+      gameState.banner = { name: c.name, sub: c.sub, t: 0 };
+      wheelieRev();
+      if (c.name === 'NEW YORK') { gameState.won = true; gameState.finishedAt = performance.now(); }
+    }
+  }
+
+  if (gameState.banner) {
+    gameState.banner.t += dt;
+    if (gameState.banner.t > 2.6) gameState.banner = null;
+  }
+
+  drawGame();
+  gameRAF = requestAnimationFrame(gameTick);
+}
+
+function drawGame() {
+  const W = gameCanvas.width, H = gameCanvas.height;
+  const groundY = H * 0.74;
+  const bikeX = W * 0.18;
+  const pxPerKm = 7;
+
+  gctx.clearRect(0, 0, W, H);
+
+  // Clouds (slow parallax)
+  gctx.fillStyle = 'rgba(255,255,255,0.75)';
+  const cloudScroll = (gameState.km * pxPerKm * 0.12) % 220;
+  for (let x = -cloudScroll; x < W + 220; x += 220) {
+    gctx.beginPath();
+    gctx.ellipse(x + 50, 40, 28, 12, 0, 0, Math.PI * 2);
+    gctx.ellipse(x + 80, 36, 24, 14, 0, 0, Math.PI * 2);
+    gctx.ellipse(x + 110, 42, 22, 11, 0, 0, Math.PI * 2);
+    gctx.fill();
+  }
+
+  // Hills (medium parallax)
+  gctx.fillStyle = '#5a8a3a';
+  const hillScroll = (gameState.km * pxPerKm * 0.35) % 260;
+  for (let x = -hillScroll - 130; x < W + 130; x += 260) {
+    gctx.beginPath();
+    gctx.arc(x + 130, groundY + 60, 150, Math.PI, 2 * Math.PI);
+    gctx.fill();
+  }
+
+  // Closer hills
+  gctx.fillStyle = '#3f6b2a';
+  const hill2 = (gameState.km * pxPerKm * 0.55) % 180;
+  for (let x = -hill2 - 90; x < W + 90; x += 180) {
+    gctx.beginPath();
+    gctx.arc(x + 90, groundY + 30, 95, Math.PI, 2 * Math.PI);
+    gctx.fill();
+  }
+
+  // Road
+  gctx.fillStyle = '#3a3a3a';
+  gctx.fillRect(0, groundY, W, H - groundY);
+
+  // Road stripes
+  const stripeScroll = (gameState.km * pxPerKm) % 80;
+  gctx.fillStyle = '#ffeb3b';
+  for (let x = -stripeScroll; x < W; x += 80) {
+    gctx.fillRect(x, groundY + 22, 44, 5);
+  }
+
+  // Obstacles (orange cones)
+  for (const obs of gameState.obstacles) {
+    const screenX = bikeX + (obs.km - gameState.km) * pxPerKm;
+    if (screenX < -40 || screenX > W + 40) continue;
+    gctx.fillStyle = '#ff5500';
+    gctx.beginPath();
+    gctx.moveTo(screenX - 7, groundY);
+    gctx.lineTo(screenX + 19, groundY);
+    gctx.lineTo(screenX + 6, groundY - 26);
+    gctx.closePath();
+    gctx.fill();
+    gctx.fillStyle = '#fff';
+    gctx.fillRect(screenX - 1, groundY - 13, 14, 3);
+  }
+
+  // City flags
+  for (const c of gameState.cities) {
+    const screenX = bikeX + (c.km - gameState.km) * pxPerKm;
+    if (screenX < -120 || screenX > W + 120) continue;
+    // pole
+    gctx.fillStyle = '#000';
+    gctx.fillRect(screenX, groundY - 110, 3, 110);
+    // flag
+    gctx.fillStyle = c.shown ? '#ff00aa' : '#444';
+    gctx.beginPath();
+    gctx.moveTo(screenX + 3, groundY - 110);
+    gctx.lineTo(screenX + 70, groundY - 100);
+    gctx.lineTo(screenX + 3, groundY - 90);
+    gctx.closePath();
+    gctx.fill();
+    gctx.fillStyle = '#fff';
+    gctx.font = 'bold 11px "Tahoma", sans-serif';
+    gctx.textAlign = 'left';
+    gctx.textBaseline = 'middle';
+    gctx.fillText(c.name.slice(0, 7), screenX + 8, groundY - 100);
+  }
+
+  // Bike
+  const bikeY = groundY - 4 - gameState.bikeAir * 28;
+  const inAir = gameState.bikeAir > 0.05;
+  gctx.save();
+  gctx.translate(bikeX, bikeY);
+  gctx.rotate(inAir ? -0.45 : 0);
+  gctx.font = '38px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+  gctx.textAlign = 'center';
+  gctx.textBaseline = 'bottom';
+  gctx.fillText('🚲', 0, 4);
+  gctx.restore();
+  // Speed lines
+  if (!inAir) {
+    gctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    gctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) {
+      const lx = bikeX - 24 - i * 14 - (gameState.km * 4) % 8;
+      gctx.beginPath();
+      gctx.moveTo(lx, bikeY - 12 - i * 4);
+      gctx.lineTo(lx - 12, bikeY - 12 - i * 4);
+      gctx.stroke();
+    }
+  }
+
+  // HUD: distance
+  gctx.fillStyle = 'rgba(0,0,0,0.78)';
+  gctx.fillRect(8, 8, 150, 30);
+  gctx.fillStyle = '#00ff66';
+  gctx.font = 'bold 14px "Courier New", monospace';
+  gctx.textAlign = 'left';
+  gctx.textBaseline = 'middle';
+  gctx.fillText(`${Math.floor(Math.min(gameState.km, 1065))} / 1065 KM`, 16, 23);
+
+  // HUD: hint
+  gctx.fillStyle = 'rgba(0,0,0,0.65)';
+  gctx.fillRect(W - 158, 8, 150, 30);
+  gctx.fillStyle = '#fff';
+  gctx.font = 'bold 11px "Tahoma", sans-serif';
+  gctx.fillText('SPACE / ↑ to jump', W - 150, 23);
+
+  // Banner
+  if (gameState.banner) {
+    const b = gameState.banner;
+    const fade = Math.min(1, b.t * 4) * Math.min(1, (2.6 - b.t) * 2.5);
+    gctx.fillStyle = `rgba(255,0,170,${0.92 * fade})`;
+    gctx.fillRect(0, H * 0.32, W, 110);
+    gctx.fillStyle = `rgba(0,0,0,${fade})`;
+    gctx.fillRect(0, H * 0.32, W, 4);
+    gctx.fillRect(0, H * 0.32 + 106, W, 4);
+    gctx.fillStyle = `rgba(255,255,255,${fade})`;
+    gctx.font = 'bold 44px "Tahoma", sans-serif';
+    gctx.textAlign = 'center';
+    gctx.fillText(b.name, W / 2, H * 0.32 + 50);
+    gctx.font = 'bold 14px "Courier New", monospace';
+    gctx.fillText(b.sub, W / 2, H * 0.32 + 84);
+  }
+
+  // Win screen
+  if (gameState.won && performance.now() - gameState.finishedAt > 2400) {
+    gctx.fillStyle = 'rgba(0,0,0,0.86)';
+    gctx.fillRect(0, 0, W, H);
+    gctx.fillStyle = '#ff00aa';
+    gctx.font = 'bold 56px "Tahoma", sans-serif';
+    gctx.textAlign = 'center';
+    gctx.fillText('YOU MADE IT', W / 2, H / 2 - 12);
+    gctx.fillStyle = '#fff';
+    gctx.font = 'bold 14px "Courier New", monospace';
+    gctx.fillText('1,065 KM IN 3 DAYS · THE BIKE IS PROUD', W / 2, H / 2 + 20);
+    gctx.fillStyle = '#00ff66';
+    gctx.fillText('► CLICK TO RIDE AGAIN ◄', W / 2, H / 2 + 56);
+  }
+}
+
+gameCanvas.addEventListener('click', () => {
+  gameCanvas.focus();
+  if (gameState && gameState.won && performance.now() - gameState.finishedAt > 2400) {
+    gameState = newGameState();
+  }
+});
+
+gameCanvas.addEventListener('keydown', (e) => {
+  if (!gameRunning) return;
+  if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+    e.preventDefault();
+    jumpBike();
+  }
+});
+
+window.addEventListener('resize', () => { if (gameRunning) resizeGame(); });
 
 // Focus map on click so keyboard works
 document.getElementById('map').addEventListener('click', () => {

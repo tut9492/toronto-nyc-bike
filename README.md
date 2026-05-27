@@ -55,7 +55,9 @@ Two itineraries share the same Route 5 + Empire State Trail corridor — toggle 
 
 ## Bike playground
 
-The map has a `🚲` you can move with the arrow keys (click the map first to focus). `SPACE` for a wheelie, `ENTER` for auto-ride along the route. Or click `▶ RIDE` / `🚲 WHEELIE` / `⟲ RESET` buttons.
+**Standard / Aggressive modes** — the map has a `🚲` you can move with the arrow keys (click the map first to focus). `SPACE` for a wheelie, `ENTER` for auto-ride along the route. Or click `▶ RIDE` / `🚲 WHEELIE` / `⟲ RESET` buttons. `🔊 ENGINE` toggles motorcycle sounds (synthesized via Web Audio API — no audio files).
+
+**Excited Bike mode** — the map becomes a side-scrolling game. Bike auto-runs, `SPACE` / `↑` to jump cones. Four city checkpoints (Toronto → Rochester → Albany → NYC) trigger pink banners with the day distances. Make it to NYC for the win screen.
 
 ## Updating the data
 
