@@ -311,6 +311,7 @@
     width: 36px; height: 36px;
     display: flex; align-items: center; justify-content: center;
     pointer-events: none;
+    transform: scaleX(-1);  /* face right (direction of travel) */
   }
   .bike-emoji {
     font-size: 28px;
@@ -321,7 +322,7 @@
     filter: drop-shadow(1px 2px 0 rgba(0,0,0,0.4));
   }
   .bike-emoji.wheelie {
-    transform: rotate(-55deg) scale(1.35) translateY(-3px);
+    transform: rotate(55deg) scale(1.35) translateY(-3px);  /* flipped sign to match mirror */
   }
   .bike-emoji.zoom { animation: zoomShake 0.25s ease-out; }
   @keyframes zoomShake {
@@ -1221,7 +1222,7 @@ function drawGame() {
   const celebrating = winSec >= 0.9;
 
   if (!celebrating) {
-    // Normal riding: 🚴 (person on bike emoji has rider built in)
+    // Normal riding: 🚴 mirrored to face right (direction of travel)
     const bikeY = groundY - 4 - gameState.bikeAir * 28;
     const inAir = gameState.bikeAir > 0.05;
     const isWheelie = gameState.wheelieT > 0;
@@ -1231,7 +1232,8 @@ function drawGame() {
     const pedalBob = (!inAir && !isCrashed) ? Math.sin(performance.now() / 90) * 1.2 : 0;
     gctx.save();
     gctx.translate(bikeX, bikeY + pedalBob);
-    gctx.rotate(rotation);
+    gctx.scale(-1, 1);             // mirror so bike faces right
+    gctx.rotate(-rotation);        // negate to keep poses visually correct
     gctx.font = (isWheelie ? '46px' : '40px') + ' "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
     gctx.textAlign = 'center';
     gctx.textBaseline = 'bottom';
@@ -1276,8 +1278,12 @@ function drawGame() {
     // Rider
     const riderEmoji = liftP >= 1 ? '🙆' : '🧍';
     gctx.fillText(riderEmoji, bikeX, groundY + 4 + (liftP >= 1 ? bounce : 0));
-    // Bike — rising up then held high
-    gctx.fillText('🚲', bikeX, groundY + 4 - bikeLift + (liftP >= 1 ? bounce * 0.4 : 0));
+    // Bike — rising up then held high (mirrored to face right, matching ride direction)
+    gctx.save();
+    gctx.translate(bikeX, groundY + 4 - bikeLift + (liftP >= 1 ? bounce * 0.4 : 0));
+    gctx.scale(-1, 1);
+    gctx.fillText('🚲', 0, 0);
+    gctx.restore();
 
     // Friends slide in from right after 2s
     if (winSec >= 2) {
