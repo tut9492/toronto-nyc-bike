@@ -18,7 +18,11 @@ python3 -m http.server 8000
 - `index.html` — static viewer (Leaflet + OpenStreetMap). Sidebar tabs for Days, Hotels, Waypoints. Click a card to fly the map to it.
 - `route.kml` — source data, exported from Google My Maps. The data inlined in `index.html` was derived from this.
 
-## Route
+## Routes
+
+Two itineraries share the same Route 5 + Empire State Trail corridor — toggle in the viewer.
+
+**Standard (7 days + 1 rest):**
 
 | Day | To | Distance |
 |-----|----|----|
@@ -29,6 +33,16 @@ python3 -m http.server 8000
 | 6 | Albany | ~175 km |
 | 7 | Poughkeepsie | ~160 km |
 | 8 | New York City | ~130 km |
+
+**Aggressive (5 days, no rest, 200+ km days):**
+
+| Day | To | Distance |
+|-----|----|----|
+| 1 | Batavia, NY | ~230 km |
+| 2 | Syracuse | ~275 km (longest) |
+| 3 | Amsterdam, NY | ~225 km |
+| 4 | Poughkeepsie | ~215 km |
+| 5 | New York City | ~130 km (arrival) |
 
 ## Updating the data
 
