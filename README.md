@@ -45,6 +45,18 @@ Two itineraries share the same Route 5 + Empire State Trail corridor — toggle 
 | 5 | Poughkeepsie | ~215 km |
 | 6 | New York City | ~130 km (arrival) |
 
+**Excited Bike (3 days, do not actually do this):**
+
+| Day | To | Distance |
+|-----|----|----|
+| 1 | Rochester | ~335 km |
+| 2 | Albany | ~440 km |
+| 3 | NYC | ~290 km |
+
+## Bike playground
+
+The map has a `🚲` you can move with the arrow keys (click the map first to focus). `SPACE` for a wheelie, `ENTER` for auto-ride along the route. Or click `▶ RIDE` / `🚲 WHEELIE` / `⟲ RESET` buttons.
+
 ## Updating the data
 
 The source of truth is the Google My Map (`mid=1C_d0sZc9HCjrNrimUhRHixzdgWa5h8k`). To update:

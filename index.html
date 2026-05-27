@@ -238,6 +238,109 @@
     transform: rotate(-3deg);
     margin-left: 4px;
   }
+  .stamp-hype {
+    background: #ff00aa;
+    animation: wiggle 0.4s ease-in-out infinite;
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(-6deg) scale(1); }
+    50% { transform: rotate(6deg) scale(1.08); }
+  }
+  @keyframes bikeRide {
+    0% { transform: translateX(-6px) rotate(-4deg); }
+    50% { transform: translateX(6px) rotate(4deg); }
+    100% { transform: translateX(-6px) rotate(-4deg); }
+  }
+  @keyframes pulseBorder {
+    0%, 100% { box-shadow: 1px 1px 0 var(--ink), 0 0 0 0 #ff00aa; }
+    50% { box-shadow: 1px 1px 0 var(--ink), 0 0 0 4px rgba(255,0,170,0.4); }
+  }
+  @keyframes rainbowBar {
+    0% { background: linear-gradient(90deg, #ff0066, #ff9900); }
+    33% { background: linear-gradient(90deg, #ff9900, #ffff00); }
+    66% { background: linear-gradient(90deg, #00ccff, #ff00aa); }
+    100% { background: linear-gradient(90deg, #ff0066, #ff9900); }
+  }
+  body.excited .titlebar-icon { animation: bikeRide 0.5s ease-in-out infinite; font-size: 13px; }
+  body.excited #sidebar-window { animation: pulseBorder 1.2s ease-in-out infinite; }
+  body.excited .stat-value { color: #ff00aa; }
+  body.excited .day-window:not(.rest) .card-tb { animation: rainbowBar 2s linear infinite; }
+  body.excited .marquee-bar { color: #ff00aa; background: #1a0033; }
+  body.excited .card-desc::before { content: "🚲💨 "; }
+  .map-controls {
+    display: flex;
+    gap: 4px;
+    padding: 4px 6px;
+    background: var(--gray);
+    border-bottom: 1px solid var(--gray-darker);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .map-btn {
+    background: var(--gray);
+    border-top: 1px solid var(--light);
+    border-left: 1px solid var(--light);
+    border-right: 1px solid var(--gray-darker);
+    border-bottom: 1px solid var(--gray-darker);
+    padding: 3px 10px;
+    font: inherit; font-size: 11px; font-weight: 700;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .map-btn:active {
+    border-top-color: var(--gray-darker); border-left-color: var(--gray-darker);
+    border-right-color: var(--light); border-bottom-color: var(--light);
+  }
+  .map-hint {
+    font-family: "Courier New", monospace;
+    font-size: 10px;
+    color: var(--gray-darker);
+    margin-left: auto;
+  }
+  #map:focus { outline: 2px dotted #ff00aa; outline-offset: -2px; }
+  .bike-wrap {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .bike-emoji {
+    font-size: 28px;
+    line-height: 1;
+    display: inline-block;
+    transform-origin: 50% 80%;
+    transition: transform 0.35s cubic-bezier(.5, -0.4, .4, 1.6);
+    filter: drop-shadow(1px 2px 0 rgba(0,0,0,0.4));
+  }
+  .bike-emoji.wheelie {
+    transform: rotate(-55deg) scale(1.35) translateY(-3px);
+  }
+  .bike-emoji.zoom { animation: zoomShake 0.25s ease-out; }
+  @keyframes zoomShake {
+    0% { transform: scale(1) rotate(0); }
+    50% { transform: scale(1.25) rotate(-8deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+  #wheelie-toast {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    background: #ff00aa;
+    color: #fff;
+    font-family: "Courier New", monospace;
+    font-size: 20px;
+    font-weight: 700;
+    padding: 12px 24px;
+    border: 3px solid #000;
+    box-shadow: 4px 4px 0 #000;
+    z-index: 9999;
+    pointer-events: none;
+    transition: transform 0.2s cubic-bezier(.5, -0.4, .4, 1.8);
+    text-shadow: 2px 2px 0 #6b0049;
+  }
+  #wheelie-toast.show {
+    transform: translateX(-50%) scale(1) rotate(-4deg);
+  }
   @media (max-width: 800px) {
     #app { grid-template-columns: 1fr; grid-template-rows: 60vh 1fr; height: calc(100vh - 23px); }
   }
@@ -274,6 +377,7 @@
         <div class="radio-row">
           <label><input type="radio" name="route" value="standard" checked> Standard &mdash; 7 days + rest</label>
           <label><input type="radio" name="route" value="aggressive"> Aggressive &mdash; 5 days + rest <span class="weird-stamp">200KM+</span></label>
+          <label><input type="radio" name="route" value="excited"> 🚲💨 EXCITED BIKE &mdash; 3 days <span class="weird-stamp stamp-hype">DO NOT</span></label>
         </div>
       </div>
 
@@ -313,10 +417,19 @@
         <button class="win-btn" title="Close">×</button>
       </div>
     </div>
-    <div id="map-body"><div id="map"></div></div>
+    <div class="map-controls">
+      <button class="map-btn" id="btn-ride">▶ RIDE</button>
+      <button class="map-btn" id="btn-wheelie">🚲 WHEELIE</button>
+      <button class="map-btn" id="btn-reset">⟲ RESET</button>
+      <button class="map-btn" id="btn-stop" style="display:none">■ STOP</button>
+      <span class="map-hint">↑↓←→ ride · SPACE wheelie · ENTER auto · click map first</span>
+    </div>
+    <div id="map-body"><div id="map" tabindex="0"></div></div>
   </div>
 
 </div>
+
+<div id="wheelie-toast">🚲💨 WHEELIE!!!</div>
 
 <script>
 const ROUTE_LINE = [
@@ -401,6 +514,25 @@ const ITINERARIES = {
       { name: "Lodging in Amsterdam", city: "Amsterdam", day: "DAY 4", lng: -74.1882, lat: 42.9384, desc: "Amsterdam NY has very limited downtown options (mostly motels). Recommended: push +30km to Schenectady (Hampton Inn & Suites Schenectady-Downtown, Holiday Inn Express Schenectady) for safer overnight." },
       { name: "DoubleTree Poughkeepsie (Civic Center)", city: "Poughkeepsie", day: "DAY 5", lng: -73.9263, lat: 41.7004, desc: "40 Civic Center Plaza. ~$120-180/night. 0.5km from Walkway Over the Hudson." },
       { name: "Hampton Inn Poughkeepsie", city: "Poughkeepsie", day: "DAY 5", lng: -73.9259, lat: 41.6481, desc: "2361 South Rd. ~$130-170/night. Suburban strip on Route 9." }
+    ]
+  },
+  excited: {
+    stats: [
+      { value: "1065", label: "km total" },
+      { value: "3", label: "DAYS???" },
+      { value: "0", label: "rest day" }
+    ],
+    days: [
+      { name: "START — Toronto", lng: -79.3832, lat: 43.6532, meta: "this isn't a plan it's a dare", desc: "the bike has been waiting for this its whole life. you have not. eat 4000 calories before sunrise. tell your loved ones." },
+      { name: "DAY 1 — Rochester", lng: -77.6088, lat: 43.1566, meta: "~335 km · 18-22 hrs riding", desc: "ULTRA DAY. Toronto → Hamilton → St. Catharines → border → Buffalo → Batavia → Rochester. Pack a headlamp, you will finish in the dark. The bike will be fine. You will not." },
+      { name: "DAY 2 — Albany", lng: -73.7562, lat: 42.6526, meta: "~440 km · INHUMAN", desc: "the longest day of your life. Rochester → Syracuse → Utica → Albany. Approximately the distance of an ultra-cycling race. The bike is doing wheelies. You are crying." },
+      { name: "DAY 3 — Albany → NYC", lng: -74.006, lat: 40.7128, meta: "~290 km · VICTORY LAP", desc: "Albany → Hudson → Poughkeepsie → Walkway Over the Hudson → NYC. After yesterday this feels manageable. Cross Battery Park. Sleep for 36 hours. Tell people about it forever." }
+    ],
+    hotels: [
+      { name: "Hilton Garden Inn Rochester Downtown", city: "Rochester", day: "DAY 1", lng: -77.6078, lat: 43.1568, desc: "155 E Main St. Crash hard, eat the entire breakfast buffet, leave at 4am." },
+      { name: "Hyatt Regency Rochester", city: "Rochester", day: "DAY 1", lng: -77.6115, lat: 43.1568, desc: "125 E Main St. Same idea. Get a tub room for the leg soak." },
+      { name: "Hilton Albany", city: "Albany", day: "DAY 2", lng: -73.756, lat: 42.6497, desc: "40 Lodge St. Whatever this costs, pay it. You earned a bed with sheets." },
+      { name: "Hampton Inn Albany Downtown", city: "Albany", day: "DAY 2", lng: -73.7545, lat: 42.653, desc: "25 Chapel St. Cheaper backup. The bed is the bed." }
     ]
   }
 };
@@ -559,7 +691,103 @@ document.querySelectorAll('.tab-btn').forEach(tab => {
 });
 
 document.querySelectorAll('input[name="route"]').forEach(radio => {
-  radio.onchange = () => { if (radio.checked) renderRoute(radio.value); };
+  radio.onchange = () => {
+    if (!radio.checked) return;
+    document.body.classList.toggle('excited', radio.value === 'excited');
+    renderRoute(radio.value);
+  };
+});
+
+// ===== BIKE PLAYGROUND =====
+const bikeIcon = L.divIcon({
+  className: '',
+  html: '<div class="bike-wrap"><span class="bike-emoji" id="bike-emoji">🚲</span></div>',
+  iconSize: [36, 36],
+  iconAnchor: [18, 18]
+});
+const bikeMarker = L.marker([43.6532, -79.3832], { icon: bikeIcon, zIndexOffset: 9999 }).addTo(map);
+
+function getBikeEl() { return document.getElementById('bike-emoji'); }
+
+function wheelie() {
+  const el = getBikeEl();
+  if (!el) return;
+  el.classList.add('wheelie');
+  setTimeout(() => el.classList.remove('wheelie'), 600);
+  const toast = document.getElementById('wheelie-toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 700);
+}
+
+function zoomShake() {
+  const el = getBikeEl();
+  if (!el) return;
+  el.classList.remove('zoom');
+  void el.offsetWidth;
+  el.classList.add('zoom');
+}
+
+let rideTimer = null;
+function startAutoRide() {
+  stopAutoRide();
+  document.getElementById('btn-ride').style.display = 'none';
+  document.getElementById('btn-stop').style.display = '';
+  let i = 0;
+  bikeMarker.setLatLng([ROUTE_LINE[0][1], ROUTE_LINE[0][0]]);
+  map.flyTo([ROUTE_LINE[0][1], ROUTE_LINE[0][0]], 8, { duration: 0.8 });
+  rideTimer = setInterval(() => {
+    if (i >= ROUTE_LINE.length) { stopAutoRide(); wheelie(); return; }
+    const [lng, lat] = ROUTE_LINE[i];
+    bikeMarker.setLatLng([lat, lng]);
+    map.panTo([lat, lng], { animate: true, duration: 0.4 });
+    if (i % 4 === 0) wheelie();
+    i++;
+  }, 500);
+}
+function stopAutoRide() {
+  if (rideTimer) clearInterval(rideTimer);
+  rideTimer = null;
+  document.getElementById('btn-ride').style.display = '';
+  document.getElementById('btn-stop').style.display = 'none';
+}
+
+function resetBike() {
+  stopAutoRide();
+  bikeMarker.setLatLng([43.6532, -79.3832]);
+  map.flyTo([42.3, -76.5], 7);
+}
+
+document.getElementById('btn-ride').onclick = startAutoRide;
+document.getElementById('btn-stop').onclick = stopAutoRide;
+document.getElementById('btn-wheelie').onclick = wheelie;
+document.getElementById('btn-reset').onclick = resetBike;
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  const pos = bikeMarker.getLatLng();
+  const zoom = map.getZoom();
+  const step = 0.5 / Math.pow(2, zoom - 7);
+  let newLat = pos.lat, newLng = pos.lng, moved = false;
+  switch (e.key) {
+    case 'ArrowUp':    newLat += step; moved = true; break;
+    case 'ArrowDown':  newLat -= step; moved = true; break;
+    case 'ArrowLeft':  newLng -= step; moved = true; break;
+    case 'ArrowRight': newLng += step; moved = true; break;
+    case ' ':          e.preventDefault(); wheelie(); return;
+    case 'Enter':      e.preventDefault(); startAutoRide(); return;
+    default: return;
+  }
+  if (moved) {
+    e.preventDefault();
+    bikeMarker.setLatLng([newLat, newLng]);
+    map.panTo([newLat, newLng], { animate: true, duration: 0.2 });
+    zoomShake();
+  }
+});
+
+// Focus map on click so keyboard works
+document.getElementById('map').addEventListener('click', () => {
+  document.getElementById('map').focus();
 });
 
 document.querySelectorAll('.win-btn').forEach(btn => {
