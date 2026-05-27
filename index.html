@@ -1073,9 +1073,9 @@ function newGameState(route = 'excited') {
     route,
     km: 0,
     speed: 0,        // player-controlled
-    maxSpeed: 140,
-    accel: 230,
-    drag: 110,
+    maxSpeed: 70,    // 2× slower than before
+    accel: 115,
+    drag: 55,
     bikeAir: 0,
     bikeVY: 0,
     won: false,
@@ -1242,7 +1242,7 @@ function drawGame() {
   const W = gameCanvas.width, H = gameCanvas.height;
   const groundY = H * 0.74;
   const bikeX = W * 0.18;
-  const pxPerKm = 7;
+  const pxPerKm = 21;  // 3× longer map (more screen pixels per km)
 
   gctx.clearRect(0, 0, W, H);
 
