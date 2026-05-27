@@ -942,15 +942,21 @@ const bikeMarker = L.marker([43.6532, -79.3832], { icon: bikeIcon, zIndexOffset:
 
 function getBikeEl() { return document.getElementById('bike-emoji'); }
 
+function showToast(text, ms = 700) {
+  const toast = document.getElementById('wheelie-toast');
+  toast.textContent = text;
+  toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.classList.remove('show'), ms);
+}
+
 function wheelie() {
   const el = getBikeEl();
   if (el) {
     el.classList.add('wheelie');
     setTimeout(() => el.classList.remove('wheelie'), 600);
   }
-  const toast = document.getElementById('wheelie-toast');
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 700);
+  showToast('🚲💨 WHEELIE!!!');
 }
 
 function zoomShake() {
@@ -1350,6 +1356,15 @@ function stopGame() {
 
 function jumpBike() {
   if (!gameState || gameState.bikeAir > 0.01 || gameState.won) return;
+  // Combo: if wheelie is active when you jump, MEGA jump (off-screen).
+  if (gameState.wheelieT > 0) {
+    gameState.bikeVY = 14;       // ~3× normal jump velocity, apex way off-screen
+    gameState.wheelieT = 0;      // consume the wheelie boost
+    bellDing();
+    setTimeout(bellDing, 200);
+    showToast('🚀 MEGA JUMP!!!', 1600);
+    return;                      // no landing-hazard spawn on mega
+  }
   gameState.bikeVY = 4.2;
   clickShift(1.6, 0.08);
   // Occasionally drop a landing hazard ahead. Modest probability and only
@@ -1742,11 +1757,14 @@ function drawGame() {
 
   // HUD: hint (top-right)
   gctx.fillStyle = 'rgba(0,0,0,0.65)';
-  gctx.fillRect(W - 226, 8, 218, 48);
+  gctx.fillRect(W - 226, 8, 218, 62);
   gctx.fillStyle = '#fff';
   gctx.font = 'bold 11px "Tahoma", sans-serif';
-  gctx.fillText('→ HOLD TO GO', W - 218, 24);
-  gctx.fillText('↓ JUMP  ·  ← WHEELIE', W - 218, 42);
+  gctx.fillText('→ HOLD TO GO', W - 218, 22);
+  gctx.fillText('↓ JUMP  ·  ← WHEELIE', W - 218, 38);
+  gctx.fillStyle = '#ff00aa';
+  gctx.fillText('← then ↓ = MEGA JUMP 🚀', W - 218, 56);
+  gctx.fillStyle = '#fff';
   if (!gameState.startTime && !gameState.won) {
     // Press-to-start pulse
     const pulse = 0.6 + 0.4 * Math.sin(performance.now() / 200);
