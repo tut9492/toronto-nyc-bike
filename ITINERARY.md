@@ -9,9 +9,9 @@ Erie Canal & Hudson Valley sections of the Empire State Trail.
 | 2 | Jul 5 | Medina → **Syracuse, NY** | 218 km | — | Best Western – Inn at the Fairgrounds ✅ |
 | 3 | Jul 6 | **REST** (transfer to East Syracuse) | ~15 km | — | Holiday Inn Express & Suites DeWitt ✅ |
 | 4 | Jul 7 | DeWitt → **Albany, NY** | 241 km | +241 m | Hyatt Place Albany/Downtown ✅ |
-| 5 | Jul 8 | Albany → **Brooklyn, NYC** 🏁 | 263 km | +1,148 m | Friend's place ✅ |
+| 5 | Jul 8 | Albany → **Brooklyn, NYC** 🏁 | 265 km | +1,174 m | Friend's place (445 Rogers Ave) ✅ |
 
-**Total: ~927 km riding.**
+**Total: ~929 km riding.**
 
 ## Hotels (all booked)
 
@@ -21,7 +21,7 @@ Erie Canal & Hudson Valley sections of the Empire State Trail.
 | 2 | Best Western – The Inn at the Fairgrounds | 670 State Fair Blvd, Syracuse, NY 13209 | Jul 5 → 6 | **72076116557587** |
 | 3 | Holiday Inn Express & Suites DeWitt (Syracuse) | 5908 Widewaters Pkwy, East Syracuse, NY 13057 | Jul 6 → 7 | **72076117626588** |
 | 4 | Hyatt Place Albany/Downtown | 82 Montgomery St, Albany, NY 12207 | Jul 7 → 8 | **72076120017551** |
-| 5 | Friend's place — Brooklyn | — | Jul 8 | — |
+| 5 | Friend's place — Brooklyn | 445 Rogers Ave, Brooklyn, NY 11225 | Jul 8 | — |
 
 ## Day notes
 
@@ -42,9 +42,9 @@ chill — eat, sleep, check the bike.
 Rome, Utica, Little Falls, Canajoharie, Amsterdam, Schenectady. Pancake-flat, but it's your
 longest-but-one — dawn start.
 
-**Day 5 — Albany → Brooklyn (263 km, +1,148 m). 🏁** The big one and the only hilly day —
+**Day 5 — Albany → Brooklyn (265 km, +1,174 m). 🏁** The big one and the only hilly day —
 Hudson River Greenway south (Hudson, Poughkeepsie, Beacon, Peekskill) into NYC, then over to
-Brooklyn. Sunrise-to-sunset effort.
+**445 Rogers Ave, Brooklyn, NY 11225** (a friend's place). Sunrise-to-sunset effort.
 **Bail plan:** the **Metro-North Hudson Line** shadows the whole day (Poughkeepsie, Beacon,
 Peekskill, Croton-Harmon → Grand Central). Bikes allowed **off-peak with a bike permit** —
 roll to any station and train into the city if the legs quit.
